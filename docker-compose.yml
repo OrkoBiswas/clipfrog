@@ -1,0 +1,112 @@
+name: clipforge
+x-runtime: &runtime
+  env_file: .env
+  environment: &environment
+    DATABASE_URL: postgresql+psycopg://clipforge:${POSTGRES_PASSWORD:-clipforge_local}@postgres:5432/clipforge
+    REDIS_URL: redis://redis:6379/0
+    S3_ENDPOINT: http://minio:9000
+    SMTP_HOST: mailpit
+  depends_on:
+    postgres: {condition: service_healthy}
+    redis: {condition: service_healthy}
+    minio-init: {condition: service_completed_successfully}
+services:
+  postgres:
+    image: postgres:18.6
+    environment:
+      POSTGRES_USER: clipforge
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-clipforge_local}
+      POSTGRES_DB: clipforge
+    ports: ["127.0.0.1:55432:5432"]
+    volumes: ["postgres:/var/lib/postgresql"]
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U clipforge -d clipforge"]
+      interval: 5s
+      retries: 20
+  redis:
+    image: redis:8.10-alpine
+    command: redis-server --appendonly yes
+    ports: ["127.0.0.1:6379:6379"]
+    volumes: ["redis:/data"]
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 5s
+      retries: 20
+  minio:
+    build: {context: ., dockerfile: infra/minio.Dockerfile}
+    command: server /data --console-address :9001
+    environment:
+      MINIO_ROOT_USER: ${S3_ACCESS_KEY_ID:-clipforge_local}
+      MINIO_ROOT_PASSWORD: ${S3_SECRET_ACCESS_KEY:-clipforge_local_password}
+      MINIO_API_CORS_ALLOW_ORIGIN: http://localhost:3000
+    ports: ["127.0.0.1:9000:9000", "127.0.0.1:9001:9001"]
+    volumes: ["minio:/data"]
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:9000/minio/health/live"]
+      interval: 5s
+      retries: 20
+  minio-init:
+    build: {context: ., dockerfile: infra/api.Dockerfile}
+    env_file: .env
+    depends_on:
+      minio: {condition: service_healthy}
+    environment:
+      S3_ACCESS_KEY_ID: ${S3_ACCESS_KEY_ID:-clipforge_local}
+      S3_SECRET_ACCESS_KEY: ${S3_SECRET_ACCESS_KEY:-clipforge_local_password}
+      S3_BUCKET: ${S3_BUCKET:-clipforge}
+      S3_ENDPOINT: http://minio:9000
+    command: python scripts/init_storage.py
+  mailpit:
+    image: axllent/mailpit:v1.27
+    ports: ["127.0.0.1:8025:8025", "127.0.0.1:1025:1025"]
+  migrate:
+    <<: *runtime
+    build: {context: ., dockerfile: infra/api.Dockerfile}
+    command: alembic -c apps/api/alembic.ini upgrade head
+  api:
+    <<: *runtime
+    build: {context: ., dockerfile: infra/api.Dockerfile}
+    ports: ["127.0.0.1:8000:8000"]
+    depends_on:
+      migrate: {condition: service_completed_successfully}
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:8000/health"]
+      interval: 10s
+      retries: 10
+  worker:
+    <<: *runtime
+    build:
+      context: .
+      dockerfile: infra/worker.Dockerfile
+    volumes: ["models:/home/appuser/.cache/clipforge"]
+    command: celery -A clipforge_worker.celery_app:celery worker -l INFO -Q analysis,render,maintenance --concurrency=${WORKER_CONCURRENCY:-1}
+    depends_on:
+      migrate: {condition: service_completed_successfully}
+    healthcheck:
+      test: ["CMD-SHELL", "celery -A clipforge_worker.celery_app:celery inspect ping --timeout 5 | grep -q pong"]
+      interval: 30s
+      timeout: 10s
+      retries: 5
+  web:
+    build: {context: ., dockerfile: infra/web.Dockerfile}
+    environment:
+      API_INTERNAL_URL: http://api:8000
+      NEXT_PUBLIC_API_URL: http://localhost:8000
+    ports: ["127.0.0.1:3000:3000"]
+    depends_on:
+      api: {condition: service_healthy}
+    healthcheck:
+      test: ["CMD", "wget", "-q", "--spider", "http://127.0.0.1:3000/login"]
+      interval: 15s
+      retries: 10
+  beat:
+    <<: *runtime
+    image: clipforge-worker
+    command: celery -A clipforge_worker.celery_app:celery beat -l INFO --schedule=/tmp/celerybeat-schedule
+    depends_on:
+      worker: {condition: service_started}
+volumes:
+  postgres:
+  redis:
+  minio:
+  models:

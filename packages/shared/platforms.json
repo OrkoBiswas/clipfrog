@@ -1,0 +1,12 @@
+[
+  {"name":"YouTube Shorts","ratio":"9:16","width":1080,"height":1920,"safeBottom":0.22,"maxDuration":180},
+  {"name":"TikTok","ratio":"9:16","width":1080,"height":1920,"safeBottom":0.25,"maxDuration":180},
+  {"name":"Instagram Reels","ratio":"9:16","width":1080,"height":1920,"safeBottom":0.22,"maxDuration":90},
+  {"name":"Instagram Feed","ratio":"4:5","width":1080,"height":1350,"safeBottom":0.12,"maxDuration":60},
+  {"name":"Facebook Reels","ratio":"9:16","width":1080,"height":1920,"safeBottom":0.22,"maxDuration":90},
+  {"name":"Facebook Feed","ratio":"1:1","width":1080,"height":1080,"safeBottom":0.12,"maxDuration":90},
+  {"name":"X","ratio":"16:9","width":1920,"height":1080,"safeBottom":0.12,"maxDuration":140},
+  {"name":"LinkedIn","ratio":"1:1","width":1080,"height":1080,"safeBottom":0.12,"maxDuration":90},
+  {"name":"YouTube Landscape","ratio":"16:9","width":1920,"height":1080,"safeBottom":0.12,"maxDuration":180},
+  {"name":"Custom","ratio":"Original","safeBottom":0.12,"maxDuration":180}
+]

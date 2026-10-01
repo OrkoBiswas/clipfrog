@@ -1,0 +1,1 @@
+"""Deterministic, conservative subject framing."""

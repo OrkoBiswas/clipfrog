@@ -1,0 +1,24 @@
+# Optional live Python source mounts. Keep the web dev server on the host.
+services:
+  api:
+    environment:
+      PYTHONPATH: /app/apps/api:/app/workers/media
+    volumes:
+      - ./apps/api:/app/apps/api
+      - ./workers/media:/app/workers/media
+      - ./scripts:/app/scripts
+    command: uvicorn clipforge_api.main:app --host 0.0.0.0 --port 8000 --reload
+  worker:
+    environment:
+      PYTHONPATH: /app/apps/api:/app/workers/media
+    volumes:
+      - ./apps/api:/app/apps/api
+      - ./workers/media:/app/workers/media
+      - ./scripts:/app/scripts
+      - ./.local:/app/.local
+  beat:
+    environment:
+      PYTHONPATH: /app/apps/api:/app/workers/media
+    volumes:
+      - ./apps/api:/app/apps/api
+      - ./workers/media:/app/workers/media

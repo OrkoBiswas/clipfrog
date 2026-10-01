@@ -1,0 +1,32 @@
+name: Checks
+on: [push, pull_request]
+jobs:
+  quality:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with: {node-version: '22', cache: npm}
+      - uses: actions/setup-python@v5
+        with: {python-version: '3.12'}
+      - run: npm ci
+      - run: npm run lint && npm run typecheck && npm test && npm run build
+      - run: pip install -e '.[dev]'
+      - run: sudo apt-get update && sudo apt-get install -y ffmpeg fonts-dejavu-core fonts-noto-core
+      - run: ruff check . && mypy && pytest
+      - run: cp .env.example .env
+      - run: docker compose up -d --build
+      - run: npx playwright install --with-deps chromium
+      - name: Wait for readiness
+        run: timeout 120 sh -c 'until curl -fsS http://localhost:8000/ready; do sleep 3; done'
+      - run: alembic -c apps/api/alembic.ini check
+      - run: python scripts/check_services.py
+      - run: mkdir -p .local && docker compose exec -T worker python scripts/make_fixture.py && docker compose cp worker:/tmp/fixture.mp4 .local/fixture.mp4
+      - run: python scripts/check_upload_recovery.py
+      - run: python scripts/check_brands.py
+      - run: python scripts/check_editor_media.py
+      - run: npm run test:e2e
+      - if: failure()
+        run: docker compose logs --tail=200
+      - if: always()
+        run: docker compose down
