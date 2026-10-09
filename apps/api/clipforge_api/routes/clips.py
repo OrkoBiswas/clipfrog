@@ -2,18 +2,19 @@ import uuid
 from copy import deepcopy
 from typing import Literal
 
+from clipforge_worker.highlights.candidates import complete_clip_end
 from clipforge_worker.transcription.base import Segment
+from clipforge_worker.transcription.caption_timing import speech_captions
 from clipforge_worker.transcription.export import subtitles
 from fastapi import APIRouter, HTTPException
 from fastapi.responses import Response
-from pydantic import BaseModel, Field
+from pydantic import BaseModel, Field, ValidationError
 from sqlalchemy import select
 
-from clipforge_api.clip_schemas import CaptionConfig, ClipInput, GenerateClips, Ratio
+from clipforge_api.clip_schemas import CaptionConfig, ClipInput, GenerateClips, Ratio, RenderConfig
 from clipforge_api.config import settings
 from clipforge_api.models import (
     Analysis,
-    CaptionLibrary,
     Clip,
     ClipCandidate,
     MediaAsset,
@@ -26,31 +27,34 @@ from clipforge_api.routes.jobs import dispatch
 from clipforge_api.routes.projects import owned_project
 from clipforge_api.security import CurrentUser, Db
 from clipforge_api.services.brands import validate_logo
+from clipforge_api.services.collage import collage_faces
 from clipforge_api.services.usage import reserve
 from clipforge_api.storage import s3
 
 router = APIRouter(tags=["Clips"])
 
 
-def default_captions(db: Db, owner: uuid.UUID) -> dict:
-    from clipforge_api.services.caption_templates import TEMPLATES
-
-    library = db.get(CaptionLibrary, owner)
-    if not library:
-        return {}
-    return next(
-        (
-            item["config"]
-            for item in [*TEMPLATES, *library.data.get("custom", [])]
-            if item["id"] == library.data.get("default")
-        ),
-        {},
-    )
+def project_render_config(project: Project, explicit: dict | None = None) -> RenderConfig:
+    processing = project.processing_config
+    try:
+        config = RenderConfig.model_validate(
+            {
+                "quality": processing.get("quality", "Standard"),
+                "crop_mode": processing.get("crop_mode", "STATIC_SUBJECT_LOCK"),
+                **(processing.get("render_config") or {}),
+                **(explicit or {}),
+            }
+        )
+        if explicit is None and config.layout != "single":
+            config = config.model_copy(update={"layout": "auto", "panels": []})
+        return config
+    except ValidationError as exc:
+        raise HTTPException(422, "The layout settings are incompatible with this project.") from exc
 
 
 @router.post("/projects/{project_id}/editor-preview")
 def editor_preview(project_id: uuid.UUID, body: ClipInput, db: Db, user: CurrentUser) -> dict:
-    from clipforge_worker.reframing.planner import plan_crop
+    from clipforge_worker.reframing.planner import plan_composition
     from clipforge_worker.vision.face_detector import FaceFrame
 
     project = owned_project(db, user, project_id)
@@ -60,29 +64,31 @@ def editor_preview(project_id: uuid.UUID, body: ClipInput, db: Db, user: Current
     analysis = db.scalar(select(Analysis).where(Analysis.project_id == project_id))
     transcript = db.scalar(select(Transcript).where(Transcript.project_id == project_id))
     cfg = body.render_config
-    plan = plan_crop(
+    frames = [FaceFrame.model_validate(f) for f in analysis.face_frames] if analysis else []
+    if cfg.layout == "auto":
+        original_url = s3().generate_presigned_url(
+            "get_object",
+            Params={"Bucket": settings().s3_bucket, "Key": source.storage_key},
+            ExpiresIn=900,
+        )
+        try:
+            frames = collage_faces(
+                db, project_id, original_url, body.start_ms / 1000, body.end_ms / 1000
+            )
+        except RuntimeError as exc:
+            raise HTTPException(503, str(exc)) from exc
+    plan = plan_composition(
         source.width,
         source.height,
         body.aspect_ratio,
         body.start_ms / 1000,
         body.end_ms / 1000,
-        [FaceFrame.model_validate(f) for f in analysis.face_frames] if analysis else [],
+        frames,
         [
             scene.start_ms / 1000
             for scene in db.scalars(select(Scene).where(Scene.project_id == project_id))
         ],
-        cfg.crop_mode,
-        (cfg.anchor_x, cfg.anchor_y)
-        if cfg.anchor_x is not None and cfg.anchor_y is not None
-        else None,
-        cfg.zoom,
-        eye_line=cfg.eye_line,
-        headroom=cfg.headroom,
-        subject=cfg.subject,
-        lock_camera=cfg.lock_camera,
-        minimum_hold=cfg.minimum_crop_hold_seconds,
-        horizontal_dead_zone=cfg.horizontal_dead_zone,
-        vertical_dead_zone=cfg.vertical_dead_zone,
+        config=cfg,
         sentence_boundaries=[s["end"] for s in transcript.segments] if transcript else [],
     )
 
@@ -100,6 +106,15 @@ def editor_preview(project_id: uuid.UUID, body: ClipInput, db: Db, user: Current
     if not user.is_admin:
         result["subjects"] = []
         result["quality"].pop("samples", None)
+        for panel in result["panels"]:
+            panel["subjects"] = []
+            panel["quality"].pop("samples", None)
+        for scene in result["scenes"]:
+            scene["subjects"] = []
+            scene["quality"].pop("samples", None)
+            for panel in scene["panels"]:
+                panel["subjects"] = []
+                panel["quality"].pop("samples", None)
     return {
         "plan": result,
         "source_url": signed(source.storage_key),
@@ -111,6 +126,15 @@ def editor_preview(project_id: uuid.UUID, body: ClipInput, db: Db, user: Current
         ]
         if transcript
         else [],
+        "caption_segments": [
+            segment.model_dump()
+            for segment in speech_captions(
+                [Segment.model_validate(s) for s in transcript.segments] if transcript else [],
+                body.start_ms / 1000,
+                body.end_ms / 1000,
+                body.caption_config.cues,
+            )
+        ],
         "debug_allowed": user.is_admin,
     }
 
@@ -182,14 +206,23 @@ def export_download(
 def export_captions(
     project_id: uuid.UUID, clip_id: uuid.UUID, db: Db, user: CurrentUser
 ) -> Response:
-    cues = caption_cues(project_id, clip_id, db, user)
+    owned_project(db, user, project_id)
+    clip = owned_clip(project_id, clip_id, db)
+    transcript = db.scalar(select(Transcript).where(Transcript.project_id == project_id))
+    timed = speech_captions(
+        [Segment.model_validate(s) for s in transcript.segments] if transcript else [],
+        clip.start_ms / 1000,
+        clip.end_ms / 1000,
+        CaptionConfig.model_validate(clip.caption_config).cues,
+    )
     segments = [
-        Segment(
-            start=float(str(c["start_ms"])) / 1000,
-            end=float(str(c["end_ms"])) / 1000,
-            text=str(c["text"]),
+        segment.model_copy(
+            update={
+                "start": segment.start - clip.start_ms / 1000,
+                "end": segment.end - clip.start_ms / 1000,
+            }
         )
-        for c in cues
+        for segment in timed
     ]
     return Response(
         subtitles(segments),
@@ -262,6 +295,29 @@ def generate(
         raise HTTPException(422, "Render at most 100 outputs in one batch.")
     clips = []
     cfg = project.processing_config
+    transcript = db.scalar(select(Transcript).where(Transcript.project_id == project_id))
+    source = db.get(MediaAsset, project.source_asset_id) if project.source_asset_id else None
+    segments = (
+        [Segment.model_validate(segment) for segment in transcript.segments] if transcript else []
+    )
+    endings: dict[uuid.UUID, int] = {}
+    for candidate in candidates:
+        ending = (
+            complete_clip_end(
+                segments,
+                candidate.start_ms / 1000,
+                candidate.end_ms / 1000,
+                source.duration_ms / 1000,
+            )
+            if segments and source and source.duration_ms
+            else candidate.end_ms / 1000
+        )
+        if ending is None:
+            raise HTTPException(
+                422,
+                "This highlight has no complete ending nearby. Find highlights again to choose finished moments.",
+            )
+        endings[candidate.id] = round(ending * 1000)
     for candidate in candidates:
         for ratio in dict.fromkeys(body.ratios):
             clip = Clip(
@@ -270,21 +326,17 @@ def generate(
                 candidate_id=candidate.id,
                 title=candidate.title,
                 start_ms=candidate.start_ms,
-                end_ms=candidate.end_ms,
+                end_ms=endings[candidate.id],
                 aspect_ratio=ratio,
                 highlight_score=candidate.score_total,
                 caption_config={
                     "enabled": cfg.get("captions", True),
                     "style": cfg.get("caption_style", "Clean"),
-                    **default_captions(db, project.user_id),
                     **project.brand_config.get("captions", {}),
                     **(cfg.get("caption_config") or {}),
                 },
                 overlay_config=project.brand_config.get("overlay", {}),
-                render_config={
-                    "quality": cfg.get("quality", "Standard"),
-                    "crop_mode": cfg.get("crop_mode", "STATIC_SUBJECT_LOCK"),
-                },
+                render_config=project_render_config(project).model_dump(mode="json"),
             )
             db.add(clip)
             clips.append(clip)
@@ -339,12 +391,15 @@ def caption_cues(
         return []
     return [
         {
-            "start_ms": max(0, round(s["start"] * 1000) - clip.start_ms),
-            "end_ms": min(clip.end_ms, round(s["end"] * 1000)) - clip.start_ms,
-            "text": s["text"],
+            "start_ms": round(s.start * 1000) - clip.start_ms,
+            "end_ms": round(s.end * 1000) - clip.start_ms,
+            "text": s.text,
         }
-        for s in transcript.segments
-        if s["end"] * 1000 > clip.start_ms and s["start"] * 1000 < clip.end_ms
+        for s in speech_captions(
+            [Segment.model_validate(segment) for segment in transcript.segments],
+            clip.start_ms / 1000,
+            clip.end_ms / 1000,
+        )
     ]
 
 
@@ -361,7 +416,9 @@ def create(project_id: uuid.UUID, body: ClipInput, db: Db, user: CurrentUser) ->
     validate_source(project, body, db)
     data = body.model_dump(mode="json")
     explicit = body.model_dump(mode="json", exclude_unset=True)
-    data["caption_config"] = {**data["caption_config"], **default_captions(db, project.user_id)}
+    data["render_config"] = project_render_config(
+        project, explicit.get("render_config")
+    ).model_dump(mode="json")
     if "aspect_ratio" not in explicit and project.brand_config.get("ratios"):
         data["aspect_ratio"] = project.brand_config["ratios"][0]
     for field, brand_field in [("caption_config", "captions"), ("overlay_config", "overlay")]:
@@ -386,6 +443,7 @@ class ClipActions(BaseModel):
     action: Literal["duplicate", "delete", "render", "update"]
     aspect_ratio: Ratio | None = None
     caption_config: CaptionConfig | None = None
+    render_config: RenderConfig | None = None
 
 
 @router.post("/projects/{project_id}/clip-actions")
@@ -430,8 +488,12 @@ def clip_actions(project_id: uuid.UUID, body: ClipActions, db: Db, user: Current
             for asset in assets:
                 db.delete(asset)
         else:
-            if body.aspect_ratio is None and body.caption_config is None:
-                raise HTTPException(422, "Choose a ratio or caption style to apply.")
+            if (
+                body.aspect_ratio is None
+                and body.caption_config is None
+                and body.render_config is None
+            ):
+                raise HTTPException(422, "Choose a ratio, caption style, or layout to apply.")
             if body.aspect_ratio is not None:
                 clip.aspect_ratio = body.aspect_ratio
             if body.caption_config is not None:
@@ -439,6 +501,18 @@ def clip_actions(project_id: uuid.UUID, body: ClipActions, db: Db, user: Current
                     **body.caption_config.model_dump(mode="json"),
                     "cues": clip.caption_config.get("cues"),
                 }
+            if body.render_config is not None:
+                try:
+                    clip.render_config = RenderConfig.model_validate(
+                        {
+                            **clip.render_config,
+                            **body.render_config.model_dump(mode="json", exclude_unset=True),
+                        }
+                    ).model_dump(mode="json")
+                except ValidationError as exc:
+                    raise HTTPException(
+                        422, "The layout settings are incompatible with a selected clip."
+                    ) from exc
             clip.revision += 1
             clip.status = "DRAFT"
     db.commit()

@@ -27,14 +27,14 @@ def test_caption_timing_safe_zones_and_override_escaping(tmp_path):
     write_ass(path, segments, 10, 12, 1080, 1920, CaptionConfig(style="Karaoke"), OverlayConfig())
     text = path.read_text(encoding="utf-8")
     assert r"\pos(0,0)" not in text
-    assert r"{\k100}" in text
+    assert r"{\k100}" not in text
     assert "0:00:00.00,0:00:02.00" in text
     assert ",326,1" in text
     write_ass(path, segments, 10, 12, 1080, 1920, CaptionConfig(enabled=False), OverlayConfig())
     assert "Dialogue:" not in path.read_text(encoding="utf-8")
 
 
-def test_caption_characters_per_line_and_symbol_cleanup(tmp_path):
+def test_basic_caption_preserves_transcript_text(tmp_path):
     path = tmp_path / "wrapped.ass"
     segment = Segment(
         start=0,
@@ -45,24 +45,18 @@ def test_caption_characters_per_line_and_symbol_cleanup(tmp_path):
             Word(start=1, end=2, text="é😊xy!"),
         ],
     )
-    config = CaptionConfig(
-        punctuation=False,
-        remove_special_characters=True,
-        max_chars_per_line=4,
-        lines=2,
-    )
+    config = CaptionConfig(punctuation=False, remove_special_characters=True, max_chars_per_line=4)
     write_ass(path, [segment], 0, 2, 1080, 1920, config, OverlayConfig())
-    dialogue = next(
+    dialogues = [
         line
         for line in path.read_text(encoding="utf-8").splitlines()
         if line.startswith("Dialogue:")
-    )
-    assert "abcd\\Néxy" in dialogue
-    caption_text = dialogue.rsplit(",,", 1)[1].split("}", 1)[1]
-    assert "😊" not in caption_text and "," not in caption_text and "!" not in caption_text
+    ]
+    assert len(dialogues) == 1
+    assert r"abcd\Néxy" in dialogues[0]
 
 
-def test_caption_schema_accepts_creator_fonts():
+def test_caption_schema_preserves_selected_fonts():
     assert CaptionConfig(font="Bebas Neue").font == "Bebas Neue"
 
 

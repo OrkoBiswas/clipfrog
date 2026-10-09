@@ -1,4 +1,4 @@
-﻿"use client";
+"use client";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useMemo, useState } from "react";
@@ -7,6 +7,10 @@ import {
   ArrowUpRight,
   FolderOpen,
   Grid2X2,
+  Mic2,
+  GraduationCap,
+  Gamepad2,
+  MonitorPlay,
   List,
   Search,
   Trash2,
@@ -14,6 +18,21 @@ import {
 import { api, type Project } from "@/lib/api";
 import { ConfirmDialog, StatusBadge } from "./ui/primitives";
 import "./project-experience.css";
+
+function projectContinuation(status: string) {
+  if (["COMPLETED", "RENDERING", "EXPORTING"].includes(status))
+    return { label: "Open clips", anchor: "clips" };
+  if (["READY_FOR_CLIPS", "FINDING_HIGHLIGHTS"].includes(status))
+    return { label: "Find moments", anchor: "highlights" };
+  if (status === "UPLOADED")
+    return { label: "Analyze video", anchor: "analysis" };
+  if (["FAILED", "CANCELED"].includes(status))
+    return { label: "Review activity", anchor: "source" };
+  if (["CREATED", "DRAFT"].includes(status))
+    return { label: "Add a source", anchor: "source" };
+  return { label: "Continue", anchor: "source" };
+}
+
 export function ProjectsList({
   projects,
   isAdmin = false,
@@ -198,49 +217,74 @@ export function ProjectsList({
       <div
         className={`px-project-list ${view === "grid" ? "px-project-grid" : ""}`}
       >
-        {visible.map((project) => (
-          <div className="px-project-card" key={project.id}>
-            {isAdmin && (
-              <input
-                type="checkbox"
-                checked={selectedIds.has(project.id)}
-                aria-label={`Select ${project.name} owned by ${project.owner_email ?? "unknown user"}`}
-                onChange={(event) =>
-                  setSelectedIds((current) => {
-                    const next = new Set(current);
-                    if (event.target.checked) next.add(project.id);
-                    else next.delete(project.id);
-                    return next;
-                  })
-                }
-              />
-            )}
-            <Link className="px-project-link" href={`/projects/${project.id}`}>
-              <div className="px-project-thumbnail">
-                <Film size={25} strokeWidth={1.4} aria-hidden="true" />
+        {visible.map((project) => {
+          const continuation = projectContinuation(project.status);
+          const ContentIcon =
+            project.content_type === "Podcast" ||
+            project.content_type === "Interview"
+              ? Mic2
+              : project.content_type === "Tutorial"
+                ? GraduationCap
+                : project.content_type === "Gaming"
+                  ? Gamepad2
+                  : project.content_type === "Webinar" ||
+                      project.content_type === "Presentation"
+                    ? MonitorPlay
+                    : Film;
+          return (
+            <div className="px-project-card" key={project.id}>
+              {isAdmin && (
+                <input
+                  type="checkbox"
+                  checked={selectedIds.has(project.id)}
+                  aria-label={`Select ${project.name} owned by ${project.owner_email ?? "unknown user"}`}
+                  onChange={(event) =>
+                    setSelectedIds((current) => {
+                      const next = new Set(current);
+                      if (event.target.checked) next.add(project.id);
+                      else next.delete(project.id);
+                      return next;
+                    })
+                  }
+                />
+              )}
+              <Link
+                className="px-project-link"
+                href={`/projects/${project.id}`}
+              >
+                <div className="px-project-thumbnail">
+                  <ContentIcon size={25} strokeWidth={1.4} aria-hidden="true" />
+                </div>
+                <div className="px-project-info">
+                  <strong>{project.name}</strong>
+                  <small>
+                    {project.content_type} ·{" "}
+                    {project.processing_config.ratios.join(", ")} ·{" "}
+                    {new Date(project.created_at).toLocaleDateString("en", {
+                      month: "short",
+                      day: "numeric",
+                      timeZone: "UTC",
+                    })}
+                  </small>
+                  {isAdmin && project.owner_email && (
+                    <small>{project.owner_email}</small>
+                  )}
+                </div>
+              </Link>
+              <div className="px-project-tail">
+                <StatusBadge status={project.status} />
+                <Link
+                  className="px-project-open"
+                  href={`/projects/${project.id}#${continuation.anchor}`}
+                  aria-label={`${continuation.label}: ${project.name}`}
+                >
+                  {continuation.label}
+                  <ArrowUpRight size={14} aria-hidden="true" />
+                </Link>
               </div>
-              <div className="px-project-info">
-                <strong>{project.name}</strong>
-                <small>
-                  {project.content_type} ·{" "}
-                  {project.processing_config.ratios.join(", ")} ·{" "}
-                  {new Date(project.created_at).toLocaleDateString("en", {
-                    month: "short",
-                    day: "numeric",
-                    timeZone: "UTC",
-                  })}
-                </small>
-                {isAdmin && project.owner_email && (
-                  <small>{project.owner_email}</small>
-                )}
-              </div>
-            </Link>
-            <div className="px-project-tail">
-              <StatusBadge status={project.status} />
-              <ArrowUpRight size={17} aria-hidden="true" />
             </div>
-          </div>
-        ))}
+          );
+        })}
       </div>
       {!visible.length && (
         <div className="empty">

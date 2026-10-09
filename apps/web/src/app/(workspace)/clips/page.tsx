@@ -1,45 +1,52 @@
 import Link from "next/link";
+import { ArrowUpRight, Clapperboard } from "lucide-react";
+import { ClipsLibrary, type Clip } from "@/components/clips-panel";
 import { serverApi } from "@/lib/server";
 import type { Project } from "@/lib/api";
 export default async function ClipsPage() {
   const projects = await serverApi<Project[]>("/projects");
   const groups = await Promise.all(
     projects.map(async (project) => ({
-      project,
-      clips: await serverApi<
-        { id: string; title: string; aspect_ratio: string; status: string }[]
-      >(`/projects/${project.id}/clips`),
+      project: { id: project.id, name: project.name, status: project.status },
+      clips: await serverApi<Clip[]>(`/projects/${project.id}/clips`),
     })),
   );
+  const clips = groups.flatMap((group) => group.clips);
+  const rendered = clips.filter((clip) => clip.output_asset_id).length;
   return (
-    <>
-      <div className="page-head">
+    <div className="studio-library-page">
+      <div className="page-head studio-library-heading">
         <div>
-          <p className="eyebrow">Your media library</p>
-          <h1>Clips</h1>
-          <p>Open a project to preview, edit and download its clips.</p>
+          <p className="eyebrow">
+            <Clapperboard size={14} aria-hidden="true" /> Your content library
+          </p>
+          <h1>
+            Your clips<span>.</span>
+          </h1>
+          <p>
+            Every highlight, one creative home. Preview, refine, and make it
+            yours.
+          </p>
         </div>
+        <Link className="button primary" href="/projects/new">
+          Create a project <ArrowUpRight size={17} aria-hidden="true" />
+        </Link>
       </div>
-      <section className="panel">
-        {!groups.some((g) => g.clips.length) && (
-          <p>No clips yet. Upload a source and render your first moment.</p>
-        )}
-        {groups
-          .filter((g) => g.clips.length)
-          .map(({ project, clips }) => (
-            <div key={project.id}>
-              <h2>
-                <Link href={`/projects/${project.id}`}>{project.name}</Link>
-              </h2>
-              {clips.map((clip) => (
-                <p key={clip.id}>
-                  <Link href={`/projects/${project.id}`}>{clip.title}</Link> ·{" "}
-                  {clip.aspect_ratio} · {clip.status}
-                </p>
-              ))}
-            </div>
-          ))}
-      </section>
-    </>
+      <dl className="studio-library-summary" aria-label="Library overview">
+        <div>
+          <dt>Total clips</dt>
+          <dd>{clips.length}</dd>
+        </div>
+        <div>
+          <dt>Rendered</dt>
+          <dd>{rendered}</dd>
+        </div>
+        <div>
+          <dt>Source projects</dt>
+          <dd>{groups.filter((group) => group.clips.length).length}</dd>
+        </div>
+      </dl>
+      <ClipsLibrary groups={groups} />
+    </div>
   );
 }

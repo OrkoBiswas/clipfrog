@@ -2,7 +2,7 @@
 
 import { useEffect, useRef } from "react";
 import { usePathname } from "next/navigation";
-export const motion = { duration: 0.3, stagger: 0.035, ease: "power2.out" };
+export const motion = { duration: 0.55, stagger: 0.065, ease: "power3.out" };
 export function MotionReveal({ children }: { children: React.ReactNode }) {
   const ref = useRef<HTMLDivElement>(null);
   const path = usePathname();
@@ -15,15 +15,18 @@ export function MotionReveal({ children }: { children: React.ReactNode }) {
       const media = gsap.matchMedia();
       media.add("(prefers-reduced-motion: no-preference)", () => {
         const ctx = gsap.context(() => {
+          const marked = ref.current!.querySelectorAll("[data-reveal]");
+          const targets = marked.length ? marked : ref.current!.children;
           gsap.fromTo(
-            ref.current,
-            { opacity: 0.5, y: 8 },
+            targets,
+            { opacity: 0.35, y: 18 },
             {
               opacity: 1,
               y: 0,
               duration: motion.duration,
+              stagger: motion.stagger,
               ease: motion.ease,
-              clearProps: "all",
+              clearProps: "opacity,transform",
             },
           );
         }, ref);

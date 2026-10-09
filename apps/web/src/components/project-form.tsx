@@ -1,13 +1,13 @@
 ﻿"use client";
 import { useEffect, useRef, useState } from "react";
 import Link from "next/link";
+import Image from "next/image";
 import { useRouter } from "next/navigation";
 import { useForm, useWatch, type FieldPath } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import {
   ArrowLeft,
   ArrowRight,
-  AudioLines,
   Captions,
   Check,
   CheckCircle2,
@@ -28,14 +28,15 @@ import {
   Video,
 } from "lucide-react";
 import { api, type Project } from "@/lib/api";
+import { automaticFraming } from "@/lib/split-screen";
 import { projectSchema, type ProjectFormValues } from "@/lib/validation";
 import platforms from "../../../../packages/shared/platforms.json";
-import { CaptionStudio } from "./caption-studio";
+import { CaptionStudio } from "./basic-caption-studio";
 import { SourceUpload } from "./source-upload";
 import { Toggle } from "./ui/primitives";
 import { useToast } from "./ui/toast";
 import type { BrandKit } from "./brand-kits";
-import type { CaptionStyle } from "@/lib/editor-types";
+import type { CaptionStyle, FramingStyle } from "@/lib/editor-types";
 import "./project-experience.css";
 
 const contentTypes = [
@@ -79,24 +80,24 @@ const contentTypes = [
 ] as const;
 const steps = [
   { label: "Upload", icon: UploadCloud },
-  { label: "Content", icon: Video },
-  { label: "Clips", icon: Scissors },
-  { label: "Style", icon: Palette },
+  { label: "Video details", icon: Video },
+  { label: "Clip options", icon: Scissors },
+  { label: "Captions & brand", icon: Palette },
   { label: "Review", icon: CheckCircle2 },
 ];
 const headings = [
-  "Start with your source.",
-  "Tell us about your video.",
-  "Small clips. Big possibilities.",
-  "Make every frame feel like you.",
+  "Upload your original video",
+  "Name your project and describe the video",
+  "Choose the clips you want to create",
+  "Choose captions and your brand",
   "Everything look right?",
 ];
 const descriptions = [
-  "Bring your video in. We’ll help you find the moments that matter.",
-  "A little context helps us understand your story and frame it well.",
-  "Choose your output. You can refine individual clips later.",
-  "Start with a caption style, or bring your own brand into the mix.",
-  "Review your choices before opening your project workspace.",
+  "Choose a video from your device. You can also finish setup now and upload later.",
+  "Choose Auto if you want highlight ranking to adapt to the video. Set the spoken language or let us detect it.",
+  "Set the maximum number of highlights, their length, and the video formats. You can edit each clip later.",
+  "Turn subtitles on or off and choose their appearance. Adding a brand kit is optional.",
+  "Check your choices, then open the project to analyze your video and find highlights.",
 ];
 
 export function ProjectForm({
@@ -128,6 +129,13 @@ export function ProjectForm({
     project?.processing_config.caption_config ??
       project?.brand_config.captions ?? { enabled: true, style: "Clean" },
   );
+  const [framing, setFraming] = useState<FramingStyle>(
+    automaticFraming(project?.processing_config.render_config ?? {
+      layout: "single",
+      quality: project?.processing_config.quality ?? "Standard",
+      crop_mode: project?.processing_config.crop_mode ?? "STATIC_SUBJECT_LOCK",
+    }),
+  );
   const [usage, setUsage] = useState<{
     allowance: Record<string, number | null>;
     usage: Record<string, number>;
@@ -149,7 +157,7 @@ export function ProjectForm({
       name: project?.name ?? "",
       content_type:
         (project?.content_type as ProjectFormValues["content_type"]) ??
-        "Podcast",
+        "Auto",
       language: project?.language ?? "auto",
       clip_count: project?.processing_config.clip_count ?? 10,
       duration_min: project?.processing_config.duration_min ?? 20,
@@ -160,7 +168,7 @@ export function ProjectForm({
       minimum_score: project?.processing_config.minimum_score ?? 35,
       minimum_separation: project?.processing_config.minimum_separation ?? 0,
       max_overlap: project?.processing_config.max_overlap ?? 0,
-      semantic_ranking: project?.processing_config.semantic_ranking ?? false,
+      semantic_ranking: false,
     },
   });
   const values = useWatch({ control }) as ProjectFormValues;
@@ -194,6 +202,7 @@ export function ProjectForm({
         ...project?.processing_config,
         brand_kit_id: brand || null,
         caption_config: { ...captions, enabled: value.captions },
+        render_config: framing,
         platform_preset: platform,
         clip_count: value.clip_count,
         duration_min: value.duration_min,
@@ -296,7 +305,7 @@ export function ProjectForm({
           <CheckCircle2 size={42} aria-hidden="true" />
         </span>
         <p className="eyebrow">ALL SET</p>
-        <h2>Your next great clips start here.</h2>
+        <h2>Project setup complete</h2>
         <p>
           <strong>{finished.name}</strong> is ready.{" "}
           {uploaded
@@ -350,7 +359,7 @@ export function ProjectForm({
         <div className="px-wizard-layout">
           <div className="px-wizard-main">
             <div className="px-step-heading">
-              <p className="eyebrow">{steps[step].label.toUpperCase()}</p>
+              <p className="eyebrow">Setup step {step + 1} of {steps.length} · {steps[step].label}</p>
               <h2 ref={stepHeading} tabIndex={-1}>
                 {headings[step]}
               </h2>
@@ -503,7 +512,7 @@ export function ProjectForm({
                 <div className="px-control-group">
                   <div className="px-control-title">
                     <h3>Number of clips</h3>
-                    <span className="muted">Up to 100 moments</span>
+                    <span className="muted">Maximum highlights to find</span>
                   </div>
                   <div
                     className="px-chips"
@@ -597,7 +606,7 @@ export function ProjectForm({
                       />
                     </label>
                     <label className="field">
-                      Maximum duration (seconds)
+                      Target maximum duration (seconds)
                       <input
                         id="project-duration_max"
                         type="number"
@@ -614,12 +623,12 @@ export function ProjectForm({
                         errors.duration_max?.message}
                     </p>
                   )}
+                  <p className="muted">Clips can run a few seconds longer to finish a sentence. Endings follow natural pauses.</p>
                 </div>
                 <fieldset className="px-fieldset">
-                  <legend>Frame it for your audience</legend>
+                  <legend>Choose video formats</legend>
                   <p className="muted">
-                    Choose one or more aspect ratios. Each creates a separate
-                    output.
+                    Vertical 9:16 works for Shorts and Reels. Landscape 16:9 fits wider screens. Choose more than one to create a video in each format.
                   </p>
                   <div className="px-ratio-grid">
                     {[
@@ -692,7 +701,7 @@ export function ProjectForm({
                   )}
                 </fieldset>
                 <label className="field">
-                  Platform preset
+                  Quick setup for a platform
                   <select
                     value={platform}
                     onChange={(event) => {
@@ -720,7 +729,7 @@ export function ProjectForm({
                 </label>
                 <details className="px-advanced">
                   <summary>
-                    Fine-tune highlight selection
+                    Advanced highlight search settings
                     <span className="muted">Optional</span>
                   </summary>
                   <div className="px-step-body">
@@ -738,7 +747,7 @@ export function ProjectForm({
                     </label>
                     <div className="form-grid">
                       <label className="field">
-                        Minimum score
+                        Minimum highlight score (0–100)
                         <input
                           id="project-minimum_score"
                           type="number"
@@ -748,6 +757,7 @@ export function ProjectForm({
                             valueAsNumber: true,
                           })}
                         />
+                        <small className="muted">Higher values are more selective and may return fewer highlights.</small>
                       </label>
                       <label className="field">
                         Minimum separation (seconds)
@@ -760,6 +770,7 @@ export function ProjectForm({
                             valueAsNumber: true,
                           })}
                         />
+                        <small className="muted">The minimum gap between selected moments. Use 0 for no required gap.</small>
                       </label>
                       <label className="field">
                         Maximum overlap (0–1)
@@ -771,16 +782,13 @@ export function ProjectForm({
                           step={0.1}
                           {...register("max_overlap", { valueAsNumber: true })}
                         />
+                        <small className="muted">0 avoids shared footage; 1 allows moments to overlap completely.</small>
                       </label>
                     </div>
-                    <Toggle
-                      checked={!!values.semantic_ranking}
-                      onChange={(checked) =>
-                        setValue("semantic_ranking", checked)
-                      }
-                      label="Cloud semantic review"
-                      description="Sends candidate transcript excerpts to your configured provider. Local scoring is used when no provider is configured."
-                    />
+                    <p className="muted">
+                      Highlight ranking and preference learning run locally. Rate good and poor
+                      moments after analysis to improve future selections.
+                    </p>
                   </div>
                 </details>
               </div>
@@ -828,11 +836,14 @@ export function ProjectForm({
                 </label>
                 <CaptionStudio
                   value={captions}
+                  framing={framing}
+                  onFramingChange={setFraming}
                   onChange={(value) => {
                     setCaptions(value);
                     setValue("captions", value.enabled ?? true);
                   }}
                 />
+                <p className="muted">Screen layout applies to new clips. To change an existing clip, open Edit clip and use Layout &amp; safe area.</p>
               </div>
             )}
             {step === 4 && (
@@ -873,6 +884,7 @@ export function ProjectForm({
                       `${values.duration_min}–${values.duration_max} seconds`,
                     ],
                     ["Aspect ratios", values.ratios.join(" · ")],
+                    ["Multiple screens", framing.layout === "auto" ? "Automatic collage" : "Off"],
                     ["Captions", values.captions ? captions.style : "Disabled"],
                     [
                       "Brand kit",
@@ -915,28 +927,27 @@ export function ProjectForm({
                   The final number of clips depends on how many complete,
                   distinct moments your video contains.
                 </p>
+                <div className="px-step-confirmation">
+                  <strong>What happens next?</strong>
+                  <p>{uploaded ? "Open your project and analyze the video." : "Open your project, upload a video, then analyze it."} Find and preview highlights, then render your selected moments into downloadable clips.</p>
+                </div>
               </div>
             )}
           </div>
           <aside className="px-wizard-aside">
             <div className="px-aside-visual" aria-hidden="true">
-              <div className="px-aside-wave">
-                <AudioLines size={84} strokeWidth={1} />
-              </div>
-              <span className="px-aside-play">
-                <Scissors size={23} strokeWidth={1.6} />
-              </span>
+              <Image
+                src="/images/creator-studio.png"
+                alt=""
+                fill
+                sizes="220px"
+                className="px-aside-photo"
+              />
+              <span className="px-aside-preview-label">Style preview</span>
               <div className="px-aside-caption">
                 Good stories.
                 <br />
                 <strong>Great moments.</strong>
-              </div>
-              <div className="px-aside-timeline">
-                <span />
-                <span />
-                <span />
-                <span />
-                <span />
               </div>
             </div>
             <p className="eyebrow">YOUR PROJECT, AT A GLANCE</p>
@@ -994,6 +1005,7 @@ export function ProjectForm({
             )}
           </div>
           <div className="actions">
+            {step < 4 && <span className="px-continue-hint">Next: {steps[step + 1].label}</span>}
             {step === 0 && !uploaded && (
               <button
                 type="button"
@@ -1010,7 +1022,10 @@ export function ProjectForm({
                 className="button primary"
                 disabled={uploadBusy || (step === 0 && !uploaded)}
                 key="continue"
-                onClick={(event) => { event.preventDefault(); void next(); }}
+                onClick={(event) => {
+                  event.preventDefault();
+                  void next();
+                }}
               >
                 Continue <ArrowRight size={17} aria-hidden="true" />
               </button>

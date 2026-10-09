@@ -1,42 +1,7 @@
 @import "tailwindcss";
-@import "@fontsource/inter/400.css";
-@import "@fontsource/inter/500.css";
-@import "@fontsource/inter/600.css";
-@import "@fontsource/inter/700.css";
+@import "./caption-fonts.css";
 @import "./design-system.css";
-@import "@fontsource/bebas-neue/400.css";
-@import "@fontsource/lato/400.css";
-@import "@fontsource/lato/700.css";
-@import "@fontsource/montserrat/400.css";
-@import "@fontsource/montserrat/700.css";
-@import "@fontsource/open-sans/400.css";
-@import "@fontsource/open-sans/700.css";
-@import "@fontsource/roboto/400.css";
-@import "@fontsource/roboto/700.css";
-@font-face {
-  font-family: "DejaVu Sans";
-  src: url("/fonts/DejaVuSans.ttf") format("truetype");
-  font-weight: 400;
-  font-display: swap;
-}
-@font-face {
-  font-family: "DejaVu Sans";
-  src: url("/fonts/DejaVuSans-Bold.ttf") format("truetype");
-  font-weight: 700;
-  font-display: swap;
-}
-@font-face {
-  font-family: "Noto Sans";
-  src: url("/fonts/NotoSans-Regular.ttf") format("truetype");
-  font-weight: 400;
-  font-display: swap;
-}
-@font-face {
-  font-family: "Noto Sans";
-  src: url("/fonts/NotoSans-Bold.ttf") format("truetype");
-  font-weight: 700;
-  font-display: swap;
-}
+@import "./creator-studio.css";
 .caption-studio,
 .composition-editor {
   min-width: 0;
@@ -201,55 +166,15 @@
   height: 100%;
   pointer-events: none;
 }
-.caption-fade {
-  animation: caption-fade 0.15s ease-out;
-}
-.caption-pop,
 .caption-word-pop {
-  animation: caption-pop 0.12s ease-out;
+  animation: caption-word-pop 0.1s ease-out;
 }
-.caption-scale {
-  animation: caption-pop 0.18s ease-out;
-}
-.caption-bounce {
-  animation: caption-bounce 0.18s ease-out;
-}
-.caption-slide {
-  animation: caption-slide 0.15s ease-out;
-}
-@keyframes caption-fade {
-  from {
-    opacity: 0;
-  }
-  to {
-    opacity: 1;
-  }
-}
-@keyframes caption-pop {
+@keyframes caption-word-pop {
   from {
     scale: 0.92;
   }
   to {
     scale: 1;
-  }
-}
-@keyframes caption-bounce {
-  0% {
-    scale: 0.94;
-  }
-  50% {
-    scale: 1.03;
-  }
-  100% {
-    scale: 1;
-  }
-}
-@keyframes caption-slide {
-  from {
-    translate: 0 6px;
-  }
-  to {
-    translate: 0 0;
   }
 }
 .upload-zone {

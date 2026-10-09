@@ -4,7 +4,7 @@ from typing import Literal
 
 from pydantic import BaseModel, ConfigDict, EmailStr, Field, model_validator
 
-from clipforge_api.clip_schemas import CaptionConfig
+from clipforge_api.clip_schemas import CaptionConfig, RenderConfig
 
 
 class Credentials(BaseModel):
@@ -33,9 +33,7 @@ class ProcessingConfig(BaseModel):
         default=["9:16"], min_length=1, max_length=8
     )
     captions: bool = True
-    caption_style: Literal[
-        "Clean", "Bold", "Minimal", "Karaoke", "Creator", "Podcast", "High Contrast"
-    ] = "Clean"
+    caption_style: str = Field(default="Clean", max_length=80)
     crop_mode: Literal["STATIC_SUBJECT_LOCK", "SCENE_AWARE_LOCK"] = "STATIC_SUBJECT_LOCK"
     quality: Literal["Draft", "Standard", "High"] = "Standard"
     keywords: list[str] = Field(default_factory=list, max_length=20)
@@ -45,6 +43,7 @@ class ProcessingConfig(BaseModel):
     semantic_ranking: bool = False
     brand_kit_id: uuid.UUID | None = None
     caption_config: CaptionConfig | None = None
+    render_config: RenderConfig | None = None
     platform_preset: Literal[
         "Custom",
         "YouTube Shorts",
@@ -57,6 +56,20 @@ class ProcessingConfig(BaseModel):
         "LinkedIn",
         "YouTube Landscape",
     ] = "Custom"
+
+    @model_validator(mode="before")
+    @classmethod
+    def inherit_render_defaults(cls, value: object) -> object:
+        if isinstance(value, dict) and isinstance(value.get("render_config"), dict):
+            return {
+                **value,
+                "render_config": {
+                    "quality": value.get("quality", "Standard"),
+                    "crop_mode": value.get("crop_mode", "STATIC_SUBJECT_LOCK"),
+                    **value["render_config"],
+                },
+            }
+        return value
 
     @model_validator(mode="after")
     def valid_duration(self) -> "ProcessingConfig":

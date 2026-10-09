@@ -12,7 +12,12 @@ router = APIRouter(tags=["Operations"])
 def operations(db: Db, user: CurrentUser) -> dict:
     if not user.is_admin:
         raise HTTPException(403, "Administrator access required.")
-    counts = dict(db.execute(select(ProcessingJob.status, func.count()).group_by(ProcessingJob.status)).all())
+    counts = {
+        status: count
+        for status, count in db.execute(
+            select(ProcessingJob.status, func.count()).group_by(ProcessingJob.status)
+        )
+    }
     jobs = db.scalars(select(ProcessingJob).order_by(ProcessingJob.created_at.desc()).limit(100))
     return {
         "users": db.scalar(select(func.count()).select_from(User)),

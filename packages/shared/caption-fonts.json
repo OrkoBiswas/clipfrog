@@ -1,0 +1,1822 @@
+[
+  {
+    "family": "Urbanist",
+    "category": "Sans serif",
+    "weights": [
+      100,
+      200,
+      300,
+      400,
+      500,
+      600,
+      700,
+      800,
+      900
+    ],
+    "italic": true,
+    "variants": [
+      {
+        "weight": 100,
+        "italic": false,
+        "file": "caption/urbanist/100.ttf",
+        "family": "Clipfrog CF01 W100",
+        "web_file": "caption/urbanist/100.woff2"
+      },
+      {
+        "weight": 100,
+        "italic": true,
+        "file": "caption/urbanist/100-italic.ttf",
+        "family": "Clipfrog CF01 W100 Italic",
+        "web_file": "caption/urbanist/100-italic.woff2"
+      },
+      {
+        "weight": 200,
+        "italic": false,
+        "file": "caption/urbanist/200.ttf",
+        "family": "Clipfrog CF01 W200",
+        "web_file": "caption/urbanist/200.woff2"
+      },
+      {
+        "weight": 200,
+        "italic": true,
+        "file": "caption/urbanist/200-italic.ttf",
+        "family": "Clipfrog CF01 W200 Italic",
+        "web_file": "caption/urbanist/200-italic.woff2"
+      },
+      {
+        "weight": 300,
+        "italic": false,
+        "file": "caption/urbanist/300.ttf",
+        "family": "Clipfrog CF01 W300",
+        "web_file": "caption/urbanist/300.woff2"
+      },
+      {
+        "weight": 300,
+        "italic": true,
+        "file": "caption/urbanist/300-italic.ttf",
+        "family": "Clipfrog CF01 W300 Italic",
+        "web_file": "caption/urbanist/300-italic.woff2"
+      },
+      {
+        "weight": 400,
+        "italic": false,
+        "file": "caption/urbanist/400.ttf",
+        "family": "Clipfrog CF01 W400",
+        "web_file": "caption/urbanist/400.woff2"
+      },
+      {
+        "weight": 400,
+        "italic": true,
+        "file": "caption/urbanist/400-italic.ttf",
+        "family": "Clipfrog CF01 W400 Italic",
+        "web_file": "caption/urbanist/400-italic.woff2"
+      },
+      {
+        "weight": 500,
+        "italic": false,
+        "file": "caption/urbanist/500.ttf",
+        "family": "Clipfrog CF01 W500",
+        "web_file": "caption/urbanist/500.woff2"
+      },
+      {
+        "weight": 500,
+        "italic": true,
+        "file": "caption/urbanist/500-italic.ttf",
+        "family": "Clipfrog CF01 W500 Italic",
+        "web_file": "caption/urbanist/500-italic.woff2"
+      },
+      {
+        "weight": 600,
+        "italic": false,
+        "file": "caption/urbanist/600.ttf",
+        "family": "Clipfrog CF01 W600",
+        "web_file": "caption/urbanist/600.woff2"
+      },
+      {
+        "weight": 600,
+        "italic": true,
+        "file": "caption/urbanist/600-italic.ttf",
+        "family": "Clipfrog CF01 W600 Italic",
+        "web_file": "caption/urbanist/600-italic.woff2"
+      },
+      {
+        "weight": 700,
+        "italic": false,
+        "file": "caption/urbanist/700.ttf",
+        "family": "Clipfrog CF01 W700",
+        "web_file": "caption/urbanist/700.woff2"
+      },
+      {
+        "weight": 700,
+        "italic": true,
+        "file": "caption/urbanist/700-italic.ttf",
+        "family": "Clipfrog CF01 W700 Italic",
+        "web_file": "caption/urbanist/700-italic.woff2"
+      },
+      {
+        "weight": 800,
+        "italic": false,
+        "file": "caption/urbanist/800.ttf",
+        "family": "Clipfrog CF01 W800",
+        "web_file": "caption/urbanist/800.woff2"
+      },
+      {
+        "weight": 800,
+        "italic": true,
+        "file": "caption/urbanist/800-italic.ttf",
+        "family": "Clipfrog CF01 W800 Italic",
+        "web_file": "caption/urbanist/800-italic.woff2"
+      },
+      {
+        "weight": 900,
+        "italic": false,
+        "file": "caption/urbanist/900.ttf",
+        "family": "Clipfrog CF01 W900",
+        "web_file": "caption/urbanist/900.woff2"
+      },
+      {
+        "weight": 900,
+        "italic": true,
+        "file": "caption/urbanist/900-italic.ttf",
+        "family": "Clipfrog CF01 W900 Italic",
+        "web_file": "caption/urbanist/900-italic.woff2"
+      }
+    ]
+  },
+  {
+    "family": "Inter",
+    "category": "Sans serif",
+    "weights": [
+      100,
+      200,
+      300,
+      400,
+      500,
+      600,
+      700,
+      800,
+      900
+    ],
+    "italic": true,
+    "variants": [
+      {
+        "weight": 100,
+        "italic": false,
+        "file": "caption/inter/100.ttf",
+        "family": "Clipfrog CF02 W100",
+        "web_file": "caption/inter/100.woff2"
+      },
+      {
+        "weight": 100,
+        "italic": true,
+        "file": "caption/inter/100-italic.ttf",
+        "family": "Clipfrog CF02 W100 Italic",
+        "web_file": "caption/inter/100-italic.woff2"
+      },
+      {
+        "weight": 200,
+        "italic": false,
+        "file": "caption/inter/200.ttf",
+        "family": "Clipfrog CF02 W200",
+        "web_file": "caption/inter/200.woff2"
+      },
+      {
+        "weight": 200,
+        "italic": true,
+        "file": "caption/inter/200-italic.ttf",
+        "family": "Clipfrog CF02 W200 Italic",
+        "web_file": "caption/inter/200-italic.woff2"
+      },
+      {
+        "weight": 300,
+        "italic": false,
+        "file": "caption/inter/300.ttf",
+        "family": "Clipfrog CF02 W300",
+        "web_file": "caption/inter/300.woff2"
+      },
+      {
+        "weight": 300,
+        "italic": true,
+        "file": "caption/inter/300-italic.ttf",
+        "family": "Clipfrog CF02 W300 Italic",
+        "web_file": "caption/inter/300-italic.woff2"
+      },
+      {
+        "weight": 400,
+        "italic": false,
+        "file": "caption/inter/400.ttf",
+        "family": "Clipfrog CF02 W400",
+        "web_file": "caption/inter/400.woff2"
+      },
+      {
+        "weight": 400,
+        "italic": true,
+        "file": "caption/inter/400-italic.ttf",
+        "family": "Clipfrog CF02 W400 Italic",
+        "web_file": "caption/inter/400-italic.woff2"
+      },
+      {
+        "weight": 500,
+        "italic": false,
+        "file": "caption/inter/500.ttf",
+        "family": "Clipfrog CF02 W500",
+        "web_file": "caption/inter/500.woff2"
+      },
+      {
+        "weight": 500,
+        "italic": true,
+        "file": "caption/inter/500-italic.ttf",
+        "family": "Clipfrog CF02 W500 Italic",
+        "web_file": "caption/inter/500-italic.woff2"
+      },
+      {
+        "weight": 600,
+        "italic": false,
+        "file": "caption/inter/600.ttf",
+        "family": "Clipfrog CF02 W600",
+        "web_file": "caption/inter/600.woff2"
+      },
+      {
+        "weight": 600,
+        "italic": true,
+        "file": "caption/inter/600-italic.ttf",
+        "family": "Clipfrog CF02 W600 Italic",
+        "web_file": "caption/inter/600-italic.woff2"
+      },
+      {
+        "weight": 700,
+        "italic": false,
+        "file": "caption/inter/700.ttf",
+        "family": "Clipfrog CF02 W700",
+        "web_file": "caption/inter/700.woff2"
+      },
+      {
+        "weight": 700,
+        "italic": true,
+        "file": "caption/inter/700-italic.ttf",
+        "family": "Clipfrog CF02 W700 Italic",
+        "web_file": "caption/inter/700-italic.woff2"
+      },
+      {
+        "weight": 800,
+        "italic": false,
+        "file": "caption/inter/800.ttf",
+        "family": "Clipfrog CF02 W800",
+        "web_file": "caption/inter/800.woff2"
+      },
+      {
+        "weight": 800,
+        "italic": true,
+        "file": "caption/inter/800-italic.ttf",
+        "family": "Clipfrog CF02 W800 Italic",
+        "web_file": "caption/inter/800-italic.woff2"
+      },
+      {
+        "weight": 900,
+        "italic": false,
+        "file": "caption/inter/900.ttf",
+        "family": "Clipfrog CF02 W900",
+        "web_file": "caption/inter/900.woff2"
+      },
+      {
+        "weight": 900,
+        "italic": true,
+        "file": "caption/inter/900-italic.ttf",
+        "family": "Clipfrog CF02 W900 Italic",
+        "web_file": "caption/inter/900-italic.woff2"
+      }
+    ]
+  },
+  {
+    "family": "Montserrat",
+    "category": "Sans serif",
+    "weights": [
+      100,
+      200,
+      300,
+      400,
+      500,
+      600,
+      700,
+      800,
+      900
+    ],
+    "italic": true,
+    "variants": [
+      {
+        "weight": 100,
+        "italic": false,
+        "file": "caption/montserrat/100.ttf",
+        "family": "Clipfrog CF03 W100",
+        "web_file": "caption/montserrat/100.woff2"
+      },
+      {
+        "weight": 100,
+        "italic": true,
+        "file": "caption/montserrat/100-italic.ttf",
+        "family": "Clipfrog CF03 W100 Italic",
+        "web_file": "caption/montserrat/100-italic.woff2"
+      },
+      {
+        "weight": 200,
+        "italic": false,
+        "file": "caption/montserrat/200.ttf",
+        "family": "Clipfrog CF03 W200",
+        "web_file": "caption/montserrat/200.woff2"
+      },
+      {
+        "weight": 200,
+        "italic": true,
+        "file": "caption/montserrat/200-italic.ttf",
+        "family": "Clipfrog CF03 W200 Italic",
+        "web_file": "caption/montserrat/200-italic.woff2"
+      },
+      {
+        "weight": 300,
+        "italic": false,
+        "file": "caption/montserrat/300.ttf",
+        "family": "Clipfrog CF03 W300",
+        "web_file": "caption/montserrat/300.woff2"
+      },
+      {
+        "weight": 300,
+        "italic": true,
+        "file": "caption/montserrat/300-italic.ttf",
+        "family": "Clipfrog CF03 W300 Italic",
+        "web_file": "caption/montserrat/300-italic.woff2"
+      },
+      {
+        "weight": 400,
+        "italic": false,
+        "file": "caption/montserrat/400.ttf",
+        "family": "Clipfrog CF03 W400",
+        "web_file": "caption/montserrat/400.woff2"
+      },
+      {
+        "weight": 400,
+        "italic": true,
+        "file": "caption/montserrat/400-italic.ttf",
+        "family": "Clipfrog CF03 W400 Italic",
+        "web_file": "caption/montserrat/400-italic.woff2"
+      },
+      {
+        "weight": 500,
+        "italic": false,
+        "file": "caption/montserrat/500.ttf",
+        "family": "Clipfrog CF03 W500",
+        "web_file": "caption/montserrat/500.woff2"
+      },
+      {
+        "weight": 500,
+        "italic": true,
+        "file": "caption/montserrat/500-italic.ttf",
+        "family": "Clipfrog CF03 W500 Italic",
+        "web_file": "caption/montserrat/500-italic.woff2"
+      },
+      {
+        "weight": 600,
+        "italic": false,
+        "file": "caption/montserrat/600.ttf",
+        "family": "Clipfrog CF03 W600",
+        "web_file": "caption/montserrat/600.woff2"
+      },
+      {
+        "weight": 600,
+        "italic": true,
+        "file": "caption/montserrat/600-italic.ttf",
+        "family": "Clipfrog CF03 W600 Italic",
+        "web_file": "caption/montserrat/600-italic.woff2"
+      },
+      {
+        "weight": 700,
+        "italic": false,
+        "file": "caption/montserrat/700.ttf",
+        "family": "Clipfrog CF03 W700",
+        "web_file": "caption/montserrat/700.woff2"
+      },
+      {
+        "weight": 700,
+        "italic": true,
+        "file": "caption/montserrat/700-italic.ttf",
+        "family": "Clipfrog CF03 W700 Italic",
+        "web_file": "caption/montserrat/700-italic.woff2"
+      },
+      {
+        "weight": 800,
+        "italic": false,
+        "file": "caption/montserrat/800.ttf",
+        "family": "Clipfrog CF03 W800",
+        "web_file": "caption/montserrat/800.woff2"
+      },
+      {
+        "weight": 800,
+        "italic": true,
+        "file": "caption/montserrat/800-italic.ttf",
+        "family": "Clipfrog CF03 W800 Italic",
+        "web_file": "caption/montserrat/800-italic.woff2"
+      },
+      {
+        "weight": 900,
+        "italic": false,
+        "file": "caption/montserrat/900.ttf",
+        "family": "Clipfrog CF03 W900",
+        "web_file": "caption/montserrat/900.woff2"
+      },
+      {
+        "weight": 900,
+        "italic": true,
+        "file": "caption/montserrat/900-italic.ttf",
+        "family": "Clipfrog CF03 W900 Italic",
+        "web_file": "caption/montserrat/900-italic.woff2"
+      }
+    ]
+  },
+  {
+    "family": "Roboto",
+    "category": "Sans serif",
+    "weights": [
+      100,
+      200,
+      300,
+      400,
+      500,
+      600,
+      700,
+      800,
+      900
+    ],
+    "italic": true,
+    "variants": [
+      {
+        "weight": 100,
+        "italic": false,
+        "file": "caption/roboto/100.ttf",
+        "family": "Clipfrog CF04 W100",
+        "web_file": "caption/roboto/100.woff2"
+      },
+      {
+        "weight": 100,
+        "italic": true,
+        "file": "caption/roboto/100-italic.ttf",
+        "family": "Clipfrog CF04 W100 Italic",
+        "web_file": "caption/roboto/100-italic.woff2"
+      },
+      {
+        "weight": 200,
+        "italic": false,
+        "file": "caption/roboto/200.ttf",
+        "family": "Clipfrog CF04 W200",
+        "web_file": "caption/roboto/200.woff2"
+      },
+      {
+        "weight": 200,
+        "italic": true,
+        "file": "caption/roboto/200-italic.ttf",
+        "family": "Clipfrog CF04 W200 Italic",
+        "web_file": "caption/roboto/200-italic.woff2"
+      },
+      {
+        "weight": 300,
+        "italic": false,
+        "file": "caption/roboto/300.ttf",
+        "family": "Clipfrog CF04 W300",
+        "web_file": "caption/roboto/300.woff2"
+      },
+      {
+        "weight": 300,
+        "italic": true,
+        "file": "caption/roboto/300-italic.ttf",
+        "family": "Clipfrog CF04 W300 Italic",
+        "web_file": "caption/roboto/300-italic.woff2"
+      },
+      {
+        "weight": 400,
+        "italic": false,
+        "file": "caption/roboto/400.ttf",
+        "family": "Clipfrog CF04 W400",
+        "web_file": "caption/roboto/400.woff2"
+      },
+      {
+        "weight": 400,
+        "italic": true,
+        "file": "caption/roboto/400-italic.ttf",
+        "family": "Clipfrog CF04 W400 Italic",
+        "web_file": "caption/roboto/400-italic.woff2"
+      },
+      {
+        "weight": 500,
+        "italic": false,
+        "file": "caption/roboto/500.ttf",
+        "family": "Clipfrog CF04 W500",
+        "web_file": "caption/roboto/500.woff2"
+      },
+      {
+        "weight": 500,
+        "italic": true,
+        "file": "caption/roboto/500-italic.ttf",
+        "family": "Clipfrog CF04 W500 Italic",
+        "web_file": "caption/roboto/500-italic.woff2"
+      },
+      {
+        "weight": 600,
+        "italic": false,
+        "file": "caption/roboto/600.ttf",
+        "family": "Clipfrog CF04 W600",
+        "web_file": "caption/roboto/600.woff2"
+      },
+      {
+        "weight": 600,
+        "italic": true,
+        "file": "caption/roboto/600-italic.ttf",
+        "family": "Clipfrog CF04 W600 Italic",
+        "web_file": "caption/roboto/600-italic.woff2"
+      },
+      {
+        "weight": 700,
+        "italic": false,
+        "file": "caption/roboto/700.ttf",
+        "family": "Clipfrog CF04 W700",
+        "web_file": "caption/roboto/700.woff2"
+      },
+      {
+        "weight": 700,
+        "italic": true,
+        "file": "caption/roboto/700-italic.ttf",
+        "family": "Clipfrog CF04 W700 Italic",
+        "web_file": "caption/roboto/700-italic.woff2"
+      },
+      {
+        "weight": 800,
+        "italic": false,
+        "file": "caption/roboto/800.ttf",
+        "family": "Clipfrog CF04 W800",
+        "web_file": "caption/roboto/800.woff2"
+      },
+      {
+        "weight": 800,
+        "italic": true,
+        "file": "caption/roboto/800-italic.ttf",
+        "family": "Clipfrog CF04 W800 Italic",
+        "web_file": "caption/roboto/800-italic.woff2"
+      },
+      {
+        "weight": 900,
+        "italic": false,
+        "file": "caption/roboto/900.ttf",
+        "family": "Clipfrog CF04 W900",
+        "web_file": "caption/roboto/900.woff2"
+      },
+      {
+        "weight": 900,
+        "italic": true,
+        "file": "caption/roboto/900-italic.ttf",
+        "family": "Clipfrog CF04 W900 Italic",
+        "web_file": "caption/roboto/900-italic.woff2"
+      }
+    ]
+  },
+  {
+    "family": "Lato",
+    "category": "Sans serif",
+    "weights": [
+      100,
+      300,
+      400,
+      700,
+      900
+    ],
+    "italic": true,
+    "variants": [
+      {
+        "weight": 100,
+        "italic": false,
+        "file": "caption/lato/100.ttf",
+        "family": "Clipfrog CF05 W100",
+        "web_file": "caption/lato/100.woff2"
+      },
+      {
+        "weight": 100,
+        "italic": true,
+        "file": "caption/lato/100-italic.ttf",
+        "family": "Clipfrog CF05 W100 Italic",
+        "web_file": "caption/lato/100-italic.woff2"
+      },
+      {
+        "weight": 300,
+        "italic": false,
+        "file": "caption/lato/300.ttf",
+        "family": "Clipfrog CF05 W300",
+        "web_file": "caption/lato/300.woff2"
+      },
+      {
+        "weight": 300,
+        "italic": true,
+        "file": "caption/lato/300-italic.ttf",
+        "family": "Clipfrog CF05 W300 Italic",
+        "web_file": "caption/lato/300-italic.woff2"
+      },
+      {
+        "weight": 400,
+        "italic": false,
+        "file": "caption/lato/400.ttf",
+        "family": "Clipfrog CF05 W400",
+        "web_file": "caption/lato/400.woff2"
+      },
+      {
+        "weight": 400,
+        "italic": true,
+        "file": "caption/lato/400-italic.ttf",
+        "family": "Clipfrog CF05 W400 Italic",
+        "web_file": "caption/lato/400-italic.woff2"
+      },
+      {
+        "weight": 700,
+        "italic": false,
+        "file": "caption/lato/700.ttf",
+        "family": "Clipfrog CF05 W700",
+        "web_file": "caption/lato/700.woff2"
+      },
+      {
+        "weight": 700,
+        "italic": true,
+        "file": "caption/lato/700-italic.ttf",
+        "family": "Clipfrog CF05 W700 Italic",
+        "web_file": "caption/lato/700-italic.woff2"
+      },
+      {
+        "weight": 900,
+        "italic": false,
+        "file": "caption/lato/900.ttf",
+        "family": "Clipfrog CF05 W900",
+        "web_file": "caption/lato/900.woff2"
+      },
+      {
+        "weight": 900,
+        "italic": true,
+        "file": "caption/lato/900-italic.ttf",
+        "family": "Clipfrog CF05 W900 Italic",
+        "web_file": "caption/lato/900-italic.woff2"
+      }
+    ]
+  },
+  {
+    "family": "Open Sans",
+    "category": "Sans serif",
+    "weights": [
+      300,
+      400,
+      500,
+      600,
+      700,
+      800
+    ],
+    "italic": true,
+    "variants": [
+      {
+        "weight": 300,
+        "italic": false,
+        "file": "caption/open-sans/300.ttf",
+        "family": "Clipfrog CF06 W300",
+        "web_file": "caption/open-sans/300.woff2"
+      },
+      {
+        "weight": 300,
+        "italic": true,
+        "file": "caption/open-sans/300-italic.ttf",
+        "family": "Clipfrog CF06 W300 Italic",
+        "web_file": "caption/open-sans/300-italic.woff2"
+      },
+      {
+        "weight": 400,
+        "italic": false,
+        "file": "caption/open-sans/400.ttf",
+        "family": "Clipfrog CF06 W400",
+        "web_file": "caption/open-sans/400.woff2"
+      },
+      {
+        "weight": 400,
+        "italic": true,
+        "file": "caption/open-sans/400-italic.ttf",
+        "family": "Clipfrog CF06 W400 Italic",
+        "web_file": "caption/open-sans/400-italic.woff2"
+      },
+      {
+        "weight": 500,
+        "italic": false,
+        "file": "caption/open-sans/500.ttf",
+        "family": "Clipfrog CF06 W500",
+        "web_file": "caption/open-sans/500.woff2"
+      },
+      {
+        "weight": 500,
+        "italic": true,
+        "file": "caption/open-sans/500-italic.ttf",
+        "family": "Clipfrog CF06 W500 Italic",
+        "web_file": "caption/open-sans/500-italic.woff2"
+      },
+      {
+        "weight": 600,
+        "italic": false,
+        "file": "caption/open-sans/600.ttf",
+        "family": "Clipfrog CF06 W600",
+        "web_file": "caption/open-sans/600.woff2"
+      },
+      {
+        "weight": 600,
+        "italic": true,
+        "file": "caption/open-sans/600-italic.ttf",
+        "family": "Clipfrog CF06 W600 Italic",
+        "web_file": "caption/open-sans/600-italic.woff2"
+      },
+      {
+        "weight": 700,
+        "italic": false,
+        "file": "caption/open-sans/700.ttf",
+        "family": "Clipfrog CF06 W700",
+        "web_file": "caption/open-sans/700.woff2"
+      },
+      {
+        "weight": 700,
+        "italic": true,
+        "file": "caption/open-sans/700-italic.ttf",
+        "family": "Clipfrog CF06 W700 Italic",
+        "web_file": "caption/open-sans/700-italic.woff2"
+      },
+      {
+        "weight": 800,
+        "italic": false,
+        "file": "caption/open-sans/800.ttf",
+        "family": "Clipfrog CF06 W800",
+        "web_file": "caption/open-sans/800.woff2"
+      },
+      {
+        "weight": 800,
+        "italic": true,
+        "file": "caption/open-sans/800-italic.ttf",
+        "family": "Clipfrog CF06 W800 Italic",
+        "web_file": "caption/open-sans/800-italic.woff2"
+      }
+    ]
+  },
+  {
+    "family": "Noto Sans",
+    "category": "Sans serif",
+    "weights": [
+      100,
+      200,
+      300,
+      400,
+      500,
+      600,
+      700,
+      800,
+      900
+    ],
+    "italic": true,
+    "variants": [
+      {
+        "weight": 100,
+        "italic": false,
+        "file": "caption/noto-sans/100.ttf",
+        "family": "Clipfrog CF07 W100",
+        "web_file": "caption/noto-sans/100.woff2"
+      },
+      {
+        "weight": 100,
+        "italic": true,
+        "file": "caption/noto-sans/100-italic.ttf",
+        "family": "Clipfrog CF07 W100 Italic",
+        "web_file": "caption/noto-sans/100-italic.woff2"
+      },
+      {
+        "weight": 200,
+        "italic": false,
+        "file": "caption/noto-sans/200.ttf",
+        "family": "Clipfrog CF07 W200",
+        "web_file": "caption/noto-sans/200.woff2"
+      },
+      {
+        "weight": 200,
+        "italic": true,
+        "file": "caption/noto-sans/200-italic.ttf",
+        "family": "Clipfrog CF07 W200 Italic",
+        "web_file": "caption/noto-sans/200-italic.woff2"
+      },
+      {
+        "weight": 300,
+        "italic": false,
+        "file": "caption/noto-sans/300.ttf",
+        "family": "Clipfrog CF07 W300",
+        "web_file": "caption/noto-sans/300.woff2"
+      },
+      {
+        "weight": 300,
+        "italic": true,
+        "file": "caption/noto-sans/300-italic.ttf",
+        "family": "Clipfrog CF07 W300 Italic",
+        "web_file": "caption/noto-sans/300-italic.woff2"
+      },
+      {
+        "weight": 400,
+        "italic": false,
+        "file": "caption/noto-sans/400.ttf",
+        "family": "Clipfrog CF07 W400",
+        "web_file": "caption/noto-sans/400.woff2"
+      },
+      {
+        "weight": 400,
+        "italic": true,
+        "file": "caption/noto-sans/400-italic.ttf",
+        "family": "Clipfrog CF07 W400 Italic",
+        "web_file": "caption/noto-sans/400-italic.woff2"
+      },
+      {
+        "weight": 500,
+        "italic": false,
+        "file": "caption/noto-sans/500.ttf",
+        "family": "Clipfrog CF07 W500",
+        "web_file": "caption/noto-sans/500.woff2"
+      },
+      {
+        "weight": 500,
+        "italic": true,
+        "file": "caption/noto-sans/500-italic.ttf",
+        "family": "Clipfrog CF07 W500 Italic",
+        "web_file": "caption/noto-sans/500-italic.woff2"
+      },
+      {
+        "weight": 600,
+        "italic": false,
+        "file": "caption/noto-sans/600.ttf",
+        "family": "Clipfrog CF07 W600",
+        "web_file": "caption/noto-sans/600.woff2"
+      },
+      {
+        "weight": 600,
+        "italic": true,
+        "file": "caption/noto-sans/600-italic.ttf",
+        "family": "Clipfrog CF07 W600 Italic",
+        "web_file": "caption/noto-sans/600-italic.woff2"
+      },
+      {
+        "weight": 700,
+        "italic": false,
+        "file": "caption/noto-sans/700.ttf",
+        "family": "Clipfrog CF07 W700",
+        "web_file": "caption/noto-sans/700.woff2"
+      },
+      {
+        "weight": 700,
+        "italic": true,
+        "file": "caption/noto-sans/700-italic.ttf",
+        "family": "Clipfrog CF07 W700 Italic",
+        "web_file": "caption/noto-sans/700-italic.woff2"
+      },
+      {
+        "weight": 800,
+        "italic": false,
+        "file": "caption/noto-sans/800.ttf",
+        "family": "Clipfrog CF07 W800",
+        "web_file": "caption/noto-sans/800.woff2"
+      },
+      {
+        "weight": 800,
+        "italic": true,
+        "file": "caption/noto-sans/800-italic.ttf",
+        "family": "Clipfrog CF07 W800 Italic",
+        "web_file": "caption/noto-sans/800-italic.woff2"
+      },
+      {
+        "weight": 900,
+        "italic": false,
+        "file": "caption/noto-sans/900.ttf",
+        "family": "Clipfrog CF07 W900",
+        "web_file": "caption/noto-sans/900.woff2"
+      },
+      {
+        "weight": 900,
+        "italic": true,
+        "file": "caption/noto-sans/900-italic.ttf",
+        "family": "Clipfrog CF07 W900 Italic",
+        "web_file": "caption/noto-sans/900-italic.woff2"
+      }
+    ]
+  },
+  {
+    "family": "DejaVu Sans",
+    "category": "Sans serif",
+    "weights": [
+      400,
+      700
+    ],
+    "italic": true,
+    "variants": [
+      {
+        "weight": 400,
+        "italic": false,
+        "file": "caption/dejavu-sans/400.ttf",
+        "family": "Clipfrog CF08 W400",
+        "web_file": "caption/dejavu-sans/400.woff2"
+      },
+      {
+        "weight": 400,
+        "italic": true,
+        "file": "caption/dejavu-sans/400-italic.ttf",
+        "family": "Clipfrog CF08 W400 Italic",
+        "web_file": "caption/dejavu-sans/400-italic.woff2"
+      },
+      {
+        "weight": 700,
+        "italic": false,
+        "file": "caption/dejavu-sans/700.ttf",
+        "family": "Clipfrog CF08 W700",
+        "web_file": "caption/dejavu-sans/700.woff2"
+      },
+      {
+        "weight": 700,
+        "italic": true,
+        "file": "caption/dejavu-sans/700-italic.ttf",
+        "family": "Clipfrog CF08 W700 Italic",
+        "web_file": "caption/dejavu-sans/700-italic.woff2"
+      }
+    ]
+  },
+  {
+    "family": "Bebas Neue",
+    "category": "Display",
+    "weights": [
+      400
+    ],
+    "italic": false,
+    "variants": [
+      {
+        "weight": 400,
+        "italic": false,
+        "file": "caption/bebas-neue/400.ttf",
+        "family": "Clipfrog CF09 W400",
+        "web_file": "caption/bebas-neue/400.woff2"
+      }
+    ]
+  },
+  {
+    "family": "Poppins",
+    "category": "Sans serif",
+    "weights": [
+      100,
+      200,
+      300,
+      400,
+      500,
+      600,
+      700,
+      800,
+      900
+    ],
+    "italic": true,
+    "variants": [
+      {
+        "weight": 100,
+        "italic": false,
+        "file": "caption/poppins/100.ttf",
+        "family": "Clipfrog CF10 W100",
+        "web_file": "caption/poppins/100.woff2"
+      },
+      {
+        "weight": 100,
+        "italic": true,
+        "file": "caption/poppins/100-italic.ttf",
+        "family": "Clipfrog CF10 W100 Italic",
+        "web_file": "caption/poppins/100-italic.woff2"
+      },
+      {
+        "weight": 200,
+        "italic": false,
+        "file": "caption/poppins/200.ttf",
+        "family": "Clipfrog CF10 W200",
+        "web_file": "caption/poppins/200.woff2"
+      },
+      {
+        "weight": 200,
+        "italic": true,
+        "file": "caption/poppins/200-italic.ttf",
+        "family": "Clipfrog CF10 W200 Italic",
+        "web_file": "caption/poppins/200-italic.woff2"
+      },
+      {
+        "weight": 300,
+        "italic": false,
+        "file": "caption/poppins/300.ttf",
+        "family": "Clipfrog CF10 W300",
+        "web_file": "caption/poppins/300.woff2"
+      },
+      {
+        "weight": 300,
+        "italic": true,
+        "file": "caption/poppins/300-italic.ttf",
+        "family": "Clipfrog CF10 W300 Italic",
+        "web_file": "caption/poppins/300-italic.woff2"
+      },
+      {
+        "weight": 400,
+        "italic": false,
+        "file": "caption/poppins/400.ttf",
+        "family": "Clipfrog CF10 W400",
+        "web_file": "caption/poppins/400.woff2"
+      },
+      {
+        "weight": 400,
+        "italic": true,
+        "file": "caption/poppins/400-italic.ttf",
+        "family": "Clipfrog CF10 W400 Italic",
+        "web_file": "caption/poppins/400-italic.woff2"
+      },
+      {
+        "weight": 500,
+        "italic": false,
+        "file": "caption/poppins/500.ttf",
+        "family": "Clipfrog CF10 W500",
+        "web_file": "caption/poppins/500.woff2"
+      },
+      {
+        "weight": 500,
+        "italic": true,
+        "file": "caption/poppins/500-italic.ttf",
+        "family": "Clipfrog CF10 W500 Italic",
+        "web_file": "caption/poppins/500-italic.woff2"
+      },
+      {
+        "weight": 600,
+        "italic": false,
+        "file": "caption/poppins/600.ttf",
+        "family": "Clipfrog CF10 W600",
+        "web_file": "caption/poppins/600.woff2"
+      },
+      {
+        "weight": 600,
+        "italic": true,
+        "file": "caption/poppins/600-italic.ttf",
+        "family": "Clipfrog CF10 W600 Italic",
+        "web_file": "caption/poppins/600-italic.woff2"
+      },
+      {
+        "weight": 700,
+        "italic": false,
+        "file": "caption/poppins/700.ttf",
+        "family": "Clipfrog CF10 W700",
+        "web_file": "caption/poppins/700.woff2"
+      },
+      {
+        "weight": 700,
+        "italic": true,
+        "file": "caption/poppins/700-italic.ttf",
+        "family": "Clipfrog CF10 W700 Italic",
+        "web_file": "caption/poppins/700-italic.woff2"
+      },
+      {
+        "weight": 800,
+        "italic": false,
+        "file": "caption/poppins/800.ttf",
+        "family": "Clipfrog CF10 W800",
+        "web_file": "caption/poppins/800.woff2"
+      },
+      {
+        "weight": 800,
+        "italic": true,
+        "file": "caption/poppins/800-italic.ttf",
+        "family": "Clipfrog CF10 W800 Italic",
+        "web_file": "caption/poppins/800-italic.woff2"
+      },
+      {
+        "weight": 900,
+        "italic": false,
+        "file": "caption/poppins/900.ttf",
+        "family": "Clipfrog CF10 W900",
+        "web_file": "caption/poppins/900.woff2"
+      },
+      {
+        "weight": 900,
+        "italic": true,
+        "file": "caption/poppins/900-italic.ttf",
+        "family": "Clipfrog CF10 W900 Italic",
+        "web_file": "caption/poppins/900-italic.woff2"
+      }
+    ]
+  },
+  {
+    "family": "Oswald",
+    "category": "Condensed",
+    "weights": [
+      200,
+      300,
+      400,
+      500,
+      600,
+      700
+    ],
+    "italic": false,
+    "variants": [
+      {
+        "weight": 200,
+        "italic": false,
+        "file": "caption/oswald/200.ttf",
+        "family": "Clipfrog CF11 W200",
+        "web_file": "caption/oswald/200.woff2"
+      },
+      {
+        "weight": 300,
+        "italic": false,
+        "file": "caption/oswald/300.ttf",
+        "family": "Clipfrog CF11 W300",
+        "web_file": "caption/oswald/300.woff2"
+      },
+      {
+        "weight": 400,
+        "italic": false,
+        "file": "caption/oswald/400.ttf",
+        "family": "Clipfrog CF11 W400",
+        "web_file": "caption/oswald/400.woff2"
+      },
+      {
+        "weight": 500,
+        "italic": false,
+        "file": "caption/oswald/500.ttf",
+        "family": "Clipfrog CF11 W500",
+        "web_file": "caption/oswald/500.woff2"
+      },
+      {
+        "weight": 600,
+        "italic": false,
+        "file": "caption/oswald/600.ttf",
+        "family": "Clipfrog CF11 W600",
+        "web_file": "caption/oswald/600.woff2"
+      },
+      {
+        "weight": 700,
+        "italic": false,
+        "file": "caption/oswald/700.ttf",
+        "family": "Clipfrog CF11 W700",
+        "web_file": "caption/oswald/700.woff2"
+      }
+    ]
+  },
+  {
+    "family": "Roboto Condensed",
+    "category": "Condensed",
+    "weights": [
+      100,
+      200,
+      300,
+      400,
+      500,
+      600,
+      700,
+      800,
+      900
+    ],
+    "italic": true,
+    "variants": [
+      {
+        "weight": 100,
+        "italic": false,
+        "file": "caption/roboto-condensed/100.ttf",
+        "family": "Clipfrog CF12 W100",
+        "web_file": "caption/roboto-condensed/100.woff2"
+      },
+      {
+        "weight": 100,
+        "italic": true,
+        "file": "caption/roboto-condensed/100-italic.ttf",
+        "family": "Clipfrog CF12 W100 Italic",
+        "web_file": "caption/roboto-condensed/100-italic.woff2"
+      },
+      {
+        "weight": 200,
+        "italic": false,
+        "file": "caption/roboto-condensed/200.ttf",
+        "family": "Clipfrog CF12 W200",
+        "web_file": "caption/roboto-condensed/200.woff2"
+      },
+      {
+        "weight": 200,
+        "italic": true,
+        "file": "caption/roboto-condensed/200-italic.ttf",
+        "family": "Clipfrog CF12 W200 Italic",
+        "web_file": "caption/roboto-condensed/200-italic.woff2"
+      },
+      {
+        "weight": 300,
+        "italic": false,
+        "file": "caption/roboto-condensed/300.ttf",
+        "family": "Clipfrog CF12 W300",
+        "web_file": "caption/roboto-condensed/300.woff2"
+      },
+      {
+        "weight": 300,
+        "italic": true,
+        "file": "caption/roboto-condensed/300-italic.ttf",
+        "family": "Clipfrog CF12 W300 Italic",
+        "web_file": "caption/roboto-condensed/300-italic.woff2"
+      },
+      {
+        "weight": 400,
+        "italic": false,
+        "file": "caption/roboto-condensed/400.ttf",
+        "family": "Clipfrog CF12 W400",
+        "web_file": "caption/roboto-condensed/400.woff2"
+      },
+      {
+        "weight": 400,
+        "italic": true,
+        "file": "caption/roboto-condensed/400-italic.ttf",
+        "family": "Clipfrog CF12 W400 Italic",
+        "web_file": "caption/roboto-condensed/400-italic.woff2"
+      },
+      {
+        "weight": 500,
+        "italic": false,
+        "file": "caption/roboto-condensed/500.ttf",
+        "family": "Clipfrog CF12 W500",
+        "web_file": "caption/roboto-condensed/500.woff2"
+      },
+      {
+        "weight": 500,
+        "italic": true,
+        "file": "caption/roboto-condensed/500-italic.ttf",
+        "family": "Clipfrog CF12 W500 Italic",
+        "web_file": "caption/roboto-condensed/500-italic.woff2"
+      },
+      {
+        "weight": 600,
+        "italic": false,
+        "file": "caption/roboto-condensed/600.ttf",
+        "family": "Clipfrog CF12 W600",
+        "web_file": "caption/roboto-condensed/600.woff2"
+      },
+      {
+        "weight": 600,
+        "italic": true,
+        "file": "caption/roboto-condensed/600-italic.ttf",
+        "family": "Clipfrog CF12 W600 Italic",
+        "web_file": "caption/roboto-condensed/600-italic.woff2"
+      },
+      {
+        "weight": 700,
+        "italic": false,
+        "file": "caption/roboto-condensed/700.ttf",
+        "family": "Clipfrog CF12 W700",
+        "web_file": "caption/roboto-condensed/700.woff2"
+      },
+      {
+        "weight": 700,
+        "italic": true,
+        "file": "caption/roboto-condensed/700-italic.ttf",
+        "family": "Clipfrog CF12 W700 Italic",
+        "web_file": "caption/roboto-condensed/700-italic.woff2"
+      },
+      {
+        "weight": 800,
+        "italic": false,
+        "file": "caption/roboto-condensed/800.ttf",
+        "family": "Clipfrog CF12 W800",
+        "web_file": "caption/roboto-condensed/800.woff2"
+      },
+      {
+        "weight": 800,
+        "italic": true,
+        "file": "caption/roboto-condensed/800-italic.ttf",
+        "family": "Clipfrog CF12 W800 Italic",
+        "web_file": "caption/roboto-condensed/800-italic.woff2"
+      },
+      {
+        "weight": 900,
+        "italic": false,
+        "file": "caption/roboto-condensed/900.ttf",
+        "family": "Clipfrog CF12 W900",
+        "web_file": "caption/roboto-condensed/900.woff2"
+      },
+      {
+        "weight": 900,
+        "italic": true,
+        "file": "caption/roboto-condensed/900-italic.ttf",
+        "family": "Clipfrog CF12 W900 Italic",
+        "web_file": "caption/roboto-condensed/900-italic.woff2"
+      }
+    ]
+  },
+  {
+    "family": "Raleway",
+    "category": "Sans serif",
+    "weights": [
+      100,
+      200,
+      300,
+      400,
+      500,
+      600,
+      700,
+      800,
+      900
+    ],
+    "italic": true,
+    "variants": [
+      {
+        "weight": 100,
+        "italic": false,
+        "file": "caption/raleway/100.ttf",
+        "family": "Clipfrog CF13 W100",
+        "web_file": "caption/raleway/100.woff2"
+      },
+      {
+        "weight": 100,
+        "italic": true,
+        "file": "caption/raleway/100-italic.ttf",
+        "family": "Clipfrog CF13 W100 Italic",
+        "web_file": "caption/raleway/100-italic.woff2"
+      },
+      {
+        "weight": 200,
+        "italic": false,
+        "file": "caption/raleway/200.ttf",
+        "family": "Clipfrog CF13 W200",
+        "web_file": "caption/raleway/200.woff2"
+      },
+      {
+        "weight": 200,
+        "italic": true,
+        "file": "caption/raleway/200-italic.ttf",
+        "family": "Clipfrog CF13 W200 Italic",
+        "web_file": "caption/raleway/200-italic.woff2"
+      },
+      {
+        "weight": 300,
+        "italic": false,
+        "file": "caption/raleway/300.ttf",
+        "family": "Clipfrog CF13 W300",
+        "web_file": "caption/raleway/300.woff2"
+      },
+      {
+        "weight": 300,
+        "italic": true,
+        "file": "caption/raleway/300-italic.ttf",
+        "family": "Clipfrog CF13 W300 Italic",
+        "web_file": "caption/raleway/300-italic.woff2"
+      },
+      {
+        "weight": 400,
+        "italic": false,
+        "file": "caption/raleway/400.ttf",
+        "family": "Clipfrog CF13 W400",
+        "web_file": "caption/raleway/400.woff2"
+      },
+      {
+        "weight": 400,
+        "italic": true,
+        "file": "caption/raleway/400-italic.ttf",
+        "family": "Clipfrog CF13 W400 Italic",
+        "web_file": "caption/raleway/400-italic.woff2"
+      },
+      {
+        "weight": 500,
+        "italic": false,
+        "file": "caption/raleway/500.ttf",
+        "family": "Clipfrog CF13 W500",
+        "web_file": "caption/raleway/500.woff2"
+      },
+      {
+        "weight": 500,
+        "italic": true,
+        "file": "caption/raleway/500-italic.ttf",
+        "family": "Clipfrog CF13 W500 Italic",
+        "web_file": "caption/raleway/500-italic.woff2"
+      },
+      {
+        "weight": 600,
+        "italic": false,
+        "file": "caption/raleway/600.ttf",
+        "family": "Clipfrog CF13 W600",
+        "web_file": "caption/raleway/600.woff2"
+      },
+      {
+        "weight": 600,
+        "italic": true,
+        "file": "caption/raleway/600-italic.ttf",
+        "family": "Clipfrog CF13 W600 Italic",
+        "web_file": "caption/raleway/600-italic.woff2"
+      },
+      {
+        "weight": 700,
+        "italic": false,
+        "file": "caption/raleway/700.ttf",
+        "family": "Clipfrog CF13 W700",
+        "web_file": "caption/raleway/700.woff2"
+      },
+      {
+        "weight": 700,
+        "italic": true,
+        "file": "caption/raleway/700-italic.ttf",
+        "family": "Clipfrog CF13 W700 Italic",
+        "web_file": "caption/raleway/700-italic.woff2"
+      },
+      {
+        "weight": 800,
+        "italic": false,
+        "file": "caption/raleway/800.ttf",
+        "family": "Clipfrog CF13 W800",
+        "web_file": "caption/raleway/800.woff2"
+      },
+      {
+        "weight": 800,
+        "italic": true,
+        "file": "caption/raleway/800-italic.ttf",
+        "family": "Clipfrog CF13 W800 Italic",
+        "web_file": "caption/raleway/800-italic.woff2"
+      },
+      {
+        "weight": 900,
+        "italic": false,
+        "file": "caption/raleway/900.ttf",
+        "family": "Clipfrog CF13 W900",
+        "web_file": "caption/raleway/900.woff2"
+      },
+      {
+        "weight": 900,
+        "italic": true,
+        "file": "caption/raleway/900-italic.ttf",
+        "family": "Clipfrog CF13 W900 Italic",
+        "web_file": "caption/raleway/900-italic.woff2"
+      }
+    ]
+  },
+  {
+    "family": "Nunito Sans",
+    "category": "Sans serif",
+    "weights": [
+      200,
+      300,
+      400,
+      500,
+      600,
+      700,
+      800,
+      900
+    ],
+    "italic": true,
+    "variants": [
+      {
+        "weight": 200,
+        "italic": false,
+        "file": "caption/nunito-sans/200.ttf",
+        "family": "Clipfrog CF14 W200",
+        "web_file": "caption/nunito-sans/200.woff2"
+      },
+      {
+        "weight": 200,
+        "italic": true,
+        "file": "caption/nunito-sans/200-italic.ttf",
+        "family": "Clipfrog CF14 W200 Italic",
+        "web_file": "caption/nunito-sans/200-italic.woff2"
+      },
+      {
+        "weight": 300,
+        "italic": false,
+        "file": "caption/nunito-sans/300.ttf",
+        "family": "Clipfrog CF14 W300",
+        "web_file": "caption/nunito-sans/300.woff2"
+      },
+      {
+        "weight": 300,
+        "italic": true,
+        "file": "caption/nunito-sans/300-italic.ttf",
+        "family": "Clipfrog CF14 W300 Italic",
+        "web_file": "caption/nunito-sans/300-italic.woff2"
+      },
+      {
+        "weight": 400,
+        "italic": false,
+        "file": "caption/nunito-sans/400.ttf",
+        "family": "Clipfrog CF14 W400",
+        "web_file": "caption/nunito-sans/400.woff2"
+      },
+      {
+        "weight": 400,
+        "italic": true,
+        "file": "caption/nunito-sans/400-italic.ttf",
+        "family": "Clipfrog CF14 W400 Italic",
+        "web_file": "caption/nunito-sans/400-italic.woff2"
+      },
+      {
+        "weight": 500,
+        "italic": false,
+        "file": "caption/nunito-sans/500.ttf",
+        "family": "Clipfrog CF14 W500",
+        "web_file": "caption/nunito-sans/500.woff2"
+      },
+      {
+        "weight": 500,
+        "italic": true,
+        "file": "caption/nunito-sans/500-italic.ttf",
+        "family": "Clipfrog CF14 W500 Italic",
+        "web_file": "caption/nunito-sans/500-italic.woff2"
+      },
+      {
+        "weight": 600,
+        "italic": false,
+        "file": "caption/nunito-sans/600.ttf",
+        "family": "Clipfrog CF14 W600",
+        "web_file": "caption/nunito-sans/600.woff2"
+      },
+      {
+        "weight": 600,
+        "italic": true,
+        "file": "caption/nunito-sans/600-italic.ttf",
+        "family": "Clipfrog CF14 W600 Italic",
+        "web_file": "caption/nunito-sans/600-italic.woff2"
+      },
+      {
+        "weight": 700,
+        "italic": false,
+        "file": "caption/nunito-sans/700.ttf",
+        "family": "Clipfrog CF14 W700",
+        "web_file": "caption/nunito-sans/700.woff2"
+      },
+      {
+        "weight": 700,
+        "italic": true,
+        "file": "caption/nunito-sans/700-italic.ttf",
+        "family": "Clipfrog CF14 W700 Italic",
+        "web_file": "caption/nunito-sans/700-italic.woff2"
+      },
+      {
+        "weight": 800,
+        "italic": false,
+        "file": "caption/nunito-sans/800.ttf",
+        "family": "Clipfrog CF14 W800",
+        "web_file": "caption/nunito-sans/800.woff2"
+      },
+      {
+        "weight": 800,
+        "italic": true,
+        "file": "caption/nunito-sans/800-italic.ttf",
+        "family": "Clipfrog CF14 W800 Italic",
+        "web_file": "caption/nunito-sans/800-italic.woff2"
+      },
+      {
+        "weight": 900,
+        "italic": false,
+        "file": "caption/nunito-sans/900.ttf",
+        "family": "Clipfrog CF14 W900",
+        "web_file": "caption/nunito-sans/900.woff2"
+      },
+      {
+        "weight": 900,
+        "italic": true,
+        "file": "caption/nunito-sans/900-italic.ttf",
+        "family": "Clipfrog CF14 W900 Italic",
+        "web_file": "caption/nunito-sans/900-italic.woff2"
+      }
+    ]
+  },
+  {
+    "family": "DM Sans",
+    "category": "Sans serif",
+    "weights": [
+      100,
+      200,
+      300,
+      400,
+      500,
+      600,
+      700,
+      800,
+      900
+    ],
+    "italic": true,
+    "variants": [
+      {
+        "weight": 100,
+        "italic": false,
+        "file": "caption/dm-sans/100.ttf",
+        "family": "Clipfrog CF15 W100",
+        "web_file": "caption/dm-sans/100.woff2"
+      },
+      {
+        "weight": 100,
+        "italic": true,
+        "file": "caption/dm-sans/100-italic.ttf",
+        "family": "Clipfrog CF15 W100 Italic",
+        "web_file": "caption/dm-sans/100-italic.woff2"
+      },
+      {
+        "weight": 200,
+        "italic": false,
+        "file": "caption/dm-sans/200.ttf",
+        "family": "Clipfrog CF15 W200",
+        "web_file": "caption/dm-sans/200.woff2"
+      },
+      {
+        "weight": 200,
+        "italic": true,
+        "file": "caption/dm-sans/200-italic.ttf",
+        "family": "Clipfrog CF15 W200 Italic",
+        "web_file": "caption/dm-sans/200-italic.woff2"
+      },
+      {
+        "weight": 300,
+        "italic": false,
+        "file": "caption/dm-sans/300.ttf",
+        "family": "Clipfrog CF15 W300",
+        "web_file": "caption/dm-sans/300.woff2"
+      },
+      {
+        "weight": 300,
+        "italic": true,
+        "file": "caption/dm-sans/300-italic.ttf",
+        "family": "Clipfrog CF15 W300 Italic",
+        "web_file": "caption/dm-sans/300-italic.woff2"
+      },
+      {
+        "weight": 400,
+        "italic": false,
+        "file": "caption/dm-sans/400.ttf",
+        "family": "Clipfrog CF15 W400",
+        "web_file": "caption/dm-sans/400.woff2"
+      },
+      {
+        "weight": 400,
+        "italic": true,
+        "file": "caption/dm-sans/400-italic.ttf",
+        "family": "Clipfrog CF15 W400 Italic",
+        "web_file": "caption/dm-sans/400-italic.woff2"
+      },
+      {
+        "weight": 500,
+        "italic": false,
+        "file": "caption/dm-sans/500.ttf",
+        "family": "Clipfrog CF15 W500",
+        "web_file": "caption/dm-sans/500.woff2"
+      },
+      {
+        "weight": 500,
+        "italic": true,
+        "file": "caption/dm-sans/500-italic.ttf",
+        "family": "Clipfrog CF15 W500 Italic",
+        "web_file": "caption/dm-sans/500-italic.woff2"
+      },
+      {
+        "weight": 600,
+        "italic": false,
+        "file": "caption/dm-sans/600.ttf",
+        "family": "Clipfrog CF15 W600",
+        "web_file": "caption/dm-sans/600.woff2"
+      },
+      {
+        "weight": 600,
+        "italic": true,
+        "file": "caption/dm-sans/600-italic.ttf",
+        "family": "Clipfrog CF15 W600 Italic",
+        "web_file": "caption/dm-sans/600-italic.woff2"
+      },
+      {
+        "weight": 700,
+        "italic": false,
+        "file": "caption/dm-sans/700.ttf",
+        "family": "Clipfrog CF15 W700",
+        "web_file": "caption/dm-sans/700.woff2"
+      },
+      {
+        "weight": 700,
+        "italic": true,
+        "file": "caption/dm-sans/700-italic.ttf",
+        "family": "Clipfrog CF15 W700 Italic",
+        "web_file": "caption/dm-sans/700-italic.woff2"
+      },
+      {
+        "weight": 800,
+        "italic": false,
+        "file": "caption/dm-sans/800.ttf",
+        "family": "Clipfrog CF15 W800",
+        "web_file": "caption/dm-sans/800.woff2"
+      },
+      {
+        "weight": 800,
+        "italic": true,
+        "file": "caption/dm-sans/800-italic.ttf",
+        "family": "Clipfrog CF15 W800 Italic",
+        "web_file": "caption/dm-sans/800-italic.woff2"
+      },
+      {
+        "weight": 900,
+        "italic": false,
+        "file": "caption/dm-sans/900.ttf",
+        "family": "Clipfrog CF15 W900",
+        "web_file": "caption/dm-sans/900.woff2"
+      },
+      {
+        "weight": 900,
+        "italic": true,
+        "file": "caption/dm-sans/900-italic.ttf",
+        "family": "Clipfrog CF15 W900 Italic",
+        "web_file": "caption/dm-sans/900-italic.woff2"
+      }
+    ]
+  },
+  {
+    "family": "Playfair Display",
+    "category": "Serif",
+    "weights": [
+      400,
+      500,
+      600,
+      700,
+      800,
+      900
+    ],
+    "italic": true,
+    "variants": [
+      {
+        "weight": 400,
+        "italic": false,
+        "file": "caption/playfair-display/400.ttf",
+        "family": "Clipfrog CF16 W400",
+        "web_file": "caption/playfair-display/400.woff2"
+      },
+      {
+        "weight": 400,
+        "italic": true,
+        "file": "caption/playfair-display/400-italic.ttf",
+        "family": "Clipfrog CF16 W400 Italic",
+        "web_file": "caption/playfair-display/400-italic.woff2"
+      },
+      {
+        "weight": 500,
+        "italic": false,
+        "file": "caption/playfair-display/500.ttf",
+        "family": "Clipfrog CF16 W500",
+        "web_file": "caption/playfair-display/500.woff2"
+      },
+      {
+        "weight": 500,
+        "italic": true,
+        "file": "caption/playfair-display/500-italic.ttf",
+        "family": "Clipfrog CF16 W500 Italic",
+        "web_file": "caption/playfair-display/500-italic.woff2"
+      },
+      {
+        "weight": 600,
+        "italic": false,
+        "file": "caption/playfair-display/600.ttf",
+        "family": "Clipfrog CF16 W600",
+        "web_file": "caption/playfair-display/600.woff2"
+      },
+      {
+        "weight": 600,
+        "italic": true,
+        "file": "caption/playfair-display/600-italic.ttf",
+        "family": "Clipfrog CF16 W600 Italic",
+        "web_file": "caption/playfair-display/600-italic.woff2"
+      },
+      {
+        "weight": 700,
+        "italic": false,
+        "file": "caption/playfair-display/700.ttf",
+        "family": "Clipfrog CF16 W700",
+        "web_file": "caption/playfair-display/700.woff2"
+      },
+      {
+        "weight": 700,
+        "italic": true,
+        "file": "caption/playfair-display/700-italic.ttf",
+        "family": "Clipfrog CF16 W700 Italic",
+        "web_file": "caption/playfair-display/700-italic.woff2"
+      },
+      {
+        "weight": 800,
+        "italic": false,
+        "file": "caption/playfair-display/800.ttf",
+        "family": "Clipfrog CF16 W800",
+        "web_file": "caption/playfair-display/800.woff2"
+      },
+      {
+        "weight": 800,
+        "italic": true,
+        "file": "caption/playfair-display/800-italic.ttf",
+        "family": "Clipfrog CF16 W800 Italic",
+        "web_file": "caption/playfair-display/800-italic.woff2"
+      },
+      {
+        "weight": 900,
+        "italic": false,
+        "file": "caption/playfair-display/900.ttf",
+        "family": "Clipfrog CF16 W900",
+        "web_file": "caption/playfair-display/900.woff2"
+      },
+      {
+        "weight": 900,
+        "italic": true,
+        "file": "caption/playfair-display/900-italic.ttf",
+        "family": "Clipfrog CF16 W900 Italic",
+        "web_file": "caption/playfair-display/900-italic.woff2"
+      }
+    ]
+  }
+]

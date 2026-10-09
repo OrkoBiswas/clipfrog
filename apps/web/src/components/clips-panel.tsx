@@ -17,7 +17,8 @@ import {
   SlidersHorizontal,
   Trash2,
 } from "lucide-react";
-import { api, API_URL } from "@/lib/api";
+import { api, API_URL, type Config } from "@/lib/api";
+import { automaticFraming } from "@/lib/split-screen";
 import type { BrandConfig } from "@/components/brand-kits";
 import type {
   CaptionStyle,
@@ -33,7 +34,16 @@ import { useToast } from "@/components/ui/toast";
 import { timecode } from "./studio-controls";
 import "./studio.css";
 
-const EditorDialog = dynamic(() => import("./clip-editor").then(module => module.EditorDialog), { loading: () => <div role="status" className="notice">Opening your editor...</div> });
+const EditorDialog = dynamic(
+  () => import("./clip-editor").then((module) => module.EditorDialog),
+  {
+    loading: () => (
+      <div role="status" className="notice">
+        Opening your editor...
+      </div>
+    ),
+  },
+);
 
 export type Clip = {
   id: string;
@@ -65,10 +75,12 @@ export function ClipsPanel({
   projectId,
   status,
   brand,
+  processingConfig,
 }: {
   projectId: string;
   status: string;
   brand?: Partial<BrandConfig>;
+  processingConfig?: Config;
 }) {
   const [clips, setClips] = useState<Clip[]>([]);
   const [loaded, setLoaded] = useState(false);
@@ -182,15 +194,18 @@ export function ClipsPanel({
     revision: 1,
     rendered_revision: null,
     output_asset_id: null,
-    caption_config: brand?.captions ?? { enabled: true, style: "Clean" },
+    caption_config: processingConfig?.caption_config ?? brand?.captions ?? { enabled: true, style: "Clean" },
     overlay_config: brand?.overlay ?? {},
-    render_config: {},
+    render_config: automaticFraming(processingConfig?.render_config ?? {
+      quality: processingConfig?.quality ?? "Standard",
+      crop_mode: processingConfig?.crop_mode ?? "STATIC_SUBJECT_LOCK",
+    }),
   };
   return (
     <section className="panel studio-results">
       <div className="section-head">
         <div>
-          <p className="eyebrow">Made from your moments</p>
+          <p className="eyebrow">Step 4 of 4</p>
           <h2>
             Your clips <span className="studio-count">{clips.length}</span>
           </h2>
@@ -204,7 +219,7 @@ export function ClipsPanel({
           Create manual clip
         </button>
       </div>
-      <p className="muted">Fine-tune the details. Make each moment your own.</p>
+      <p className="muted">Preview a clip, use Edit clip to change its timing, captions or framing, then download the finished MP4. Render again after editing to update the video.</p>
       {!loaded && (
         <div className="studio-clips-grid">
           {[1, 2, 3].map((n) => (
@@ -215,10 +230,11 @@ export function ClipsPanel({
       {loaded && !clips.length && (
         <div className="studio-empty">
           <Clapperboard size={32} aria-hidden="true" />
-          <h3>Your best moments belong here.</h3>
+          <h3>Create your first clip</h3>
           <p>
-            Render selected highlights or create a manual clip to get started.
+            In step 3, preview your highlights and select Render clips. You can also choose your own start and end times with Create manual clip.
           </p>
+          <a className="button" href="#highlights">Go to highlights</a>
         </div>
       )}
       {!!clips.length && (
@@ -626,9 +642,27 @@ export function ClipsLibrary({
     clips: Clip[];
   }[];
 }) {
+  const router = useRouter();
   const [search, setSearch] = useState("");
   const [filter, setFilter] = useState("all");
   const [view, setView] = useState("grid");
+  const processing = groups.some(
+    ({ project, clips }) =>
+      lockedStatuses.includes(project.status) ||
+      clips.some((clip) => ["QUEUED", "RENDERING"].includes(clip.status)),
+  );
+  useEffect(() => {
+    if (!processing) return;
+    const refresh = () => {
+      if (!document.hidden) router.refresh();
+    };
+    const timer = setInterval(refresh, 4000);
+    document.addEventListener("visibilitychange", refresh);
+    return () => {
+      clearInterval(timer);
+      document.removeEventListener("visibilitychange", refresh);
+    };
+  }, [processing, router]);
   const clips = groups.flatMap(({ project, clips }) =>
     clips.map((clip) => ({ clip, project })),
   );

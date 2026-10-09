@@ -7,6 +7,12 @@ test("interactive caption library, logo layout and short render use persisted se
   page,
 }) => {
   test.setTimeout(120_000);
+  let projectId = "";
+  let kitId = "";
+  const api = "http://localhost:8000/api/v1";
+  const headers = { Origin: "http://localhost:3000" };
+
+  try {
   await page.goto("/register");
   await page.getByLabel("Your name").fill("Editor Creator");
   await page
@@ -18,16 +24,14 @@ test("interactive caption library, logo layout and short render use persisted se
   await page.getByRole("button", { name: "Create your account" }).click();
   await expect(page).toHaveURL(/\/dashboard$/);
   await expect(
-    page.getByRole("heading", { name: "Your workspace" }),
+    page.getByRole("heading", { name: /^Welcome back,/ }),
   ).toBeVisible();
-  const api = "http://localhost:8000/api/v1";
-  const headers = { Origin: "http://localhost:3000" };
   const kit = await page.request.post(`${api}/brand-kits`, {
     headers,
     data: { name: "Editor logo" },
   });
   expect(kit.ok(), await kit.text()).toBeTruthy();
-  const kitId = (await kit.json()).id;
+  kitId = (await kit.json()).id;
   expect(
     (
       await page.request.put(`${api}/brand-kits/${kitId}/logo`, {
@@ -44,6 +48,7 @@ test("interactive caption library, logo layout and short render use persisted se
     },
   });
   const project = await response.json();
+  projectId = project.id;
   const base = `${api}/projects/${project.id}`;
   const file = fs.readFileSync(path.resolve("../../.local/fixture.mp4"));
   const upload = await (
@@ -100,50 +105,76 @@ test("interactive caption library, logo layout and short render use persisted se
   await page.goto(`/projects/${project.id}`);
   await page.getByRole("tab", { name: "Clips", exact: true }).click();
   await page.getByRole("button", { name: "Edit clip", exact: true }).click();
-  const editorDialog = page.getByRole("dialog", { name: "Clip editor", exact: true });
+  const editorDialog = page.getByRole("dialog", {
+    name: "Clip editor",
+    exact: true,
+  });
   await expect(editorDialog).toBeVisible();
   for (const width of [375, 430, 768, 1024, 1280, 1440, 1920]) {
     await page.setViewportSize({ width, height: 1000 });
-    expect(await editorDialog.evaluate(element => element.scrollWidth <= element.clientWidth + 1), `Editor overflow at ${width}px`).toBe(true);
+    expect(
+      await editorDialog.evaluate(
+        (element) => element.scrollWidth <= element.clientWidth + 1,
+      ),
+      `Editor overflow at ${width}px`,
+    ).toBe(true);
+    if (width <= 600) {
+      await expect
+        .poll(async () => (await editorDialog.boundingBox())?.width)
+        .toBe(width);
+    }
   }
   await page.setViewportSize({ width: 1440, height: 1000 });
   await expect(page.locator(".composition-stage video")).toBeVisible();
+  const rail = page.getByRole("navigation", { name: "Editor tools" });
+  const preview = page.getByRole("region", { name: "Clip preview" });
+  const inspector = page.locator(".studio-inspector");
+  for (const width of [1024, 1280, 1440, 1920]) {
+    await page.setViewportSize({ width, height: 900 });
+    const railBox = (await rail.boundingBox())!;
+    const inspectorBox = (await inspector.boundingBox())!;
+    const previewBox = (await preview.boundingBox())!;
+    expect(railBox.x + railBox.width).toBeLessThanOrEqual(inspectorBox.x);
+    expect(inspectorBox.x + inspectorBox.width).toBeLessThanOrEqual(previewBox.x);
+    expect(previewBox.y + previewBox.height).toBeLessThanOrEqual(900);
+    expect(await editorDialog.evaluate((el) => el.scrollHeight <= el.clientHeight + 1)).toBe(true);
+  }
+  await page.setViewportSize({ width: 1440, height: 1000 });
+  const player = await page.locator(".composition-stage video").elementHandle();
+  for (const tool of ["Transcript", "Timing", "Reframe", "Text", "Brand", "Export", "Captions"]) {
+    await rail.getByRole("button", { name: tool, exact: true }).click();
+    await expect(inspector.getByRole("heading", { name: tool, exact: true })).toBeVisible();
+    expect(await player!.evaluate((el) => el === document.querySelector(".composition-stage video"))).toBe(true);
+  }
+  await rail.getByRole("button", { name: "Reframe", exact: true }).click();
+  await expect(inspector.getByRole("combobox", { name: "Aspect ratio", exact: true })).toBeVisible();
+  await inspector.getByLabel("Platform safe zones").selectOption("TikTok");
+  await expect(preview.locator(".safe-zone")).toContainText("TikTok");
+  await rail.getByRole("button", { name: "Captions", exact: true }).click();
   await page.screenshot({ path: "../../.local/redesign-editor-desktop.png" });
-  await expect(
-    page.getByRole("button", { name: "Apply Creator Impact", exact: true }),
-  ).toBeVisible();
-  expect(
-    await page.getByRole("button", { name: /^Apply / }).count(),
-  ).toBeGreaterThanOrEqual(25);
-  await page
-    .getByRole("button", { name: "Apply Creator Impact", exact: true })
-    .click();
-  await page.getByRole("button", { name: "Style", exact: true }).click();
-  await page.getByRole("button", { name: "Colors", exact: true }).click();
-  await page.getByLabel("Text color", { exact: true }).fill("#ff9922");
-  await page.getByRole("button", { name: "Style", exact: true }).click();
-  await page.getByLabel("Font size", { exact: true }).fill("72");
-  await page.getByRole("button", { name: "Animation", exact: true }).click();
-  await page
-    .getByRole("combobox", { name: "Caption animation", exact: true })
-    .selectOption("pop");
+  await expect(inspector.locator(".studio-caption-heading .muted")).toHaveText(
+    "Basic Word Pop",
+  );
+  await expect(inspector.getByLabel("Subtitles enabled")).toBeChecked();
+  await expect(inspector.getByRole("button", { name: "Templates", exact: true })).toHaveCount(0);
   await page.getByRole("button", { name: "Brand", exact: true }).click();
   await page
     .getByRole("button", { name: "Logo placement: top center", exact: true })
     .click();
   await page.getByLabel("Logo opacity", { exact: true }).fill("0.6");
   await page.getByLabel("Logo size", { exact: true }).fill("0.2");
-  await page.getByRole("button", { name: "Captions", exact: true }).click();
-  await page
-    .getByText("My templates: save, rename, duplicate or set default", {
-      exact: true,
-    })
+  await page.getByRole("button", { name: "Close", exact: true }).click();
+  const discardDialog = page.getByRole("dialog", {
+    name: "Discard your edits?",
+  });
+  await expect(discardDialog).toBeVisible();
+  await discardDialog
+    .getByRole("button", { name: "Cancel", exact: true })
     .click();
-  await page.getByLabel("Custom template name").fill("My amber style");
-  await page
-    .getByRole("button", { name: "Save as My Template", exact: true })
-    .click();
-  await expect(page.getByText("Template saved to your library.")).toBeVisible();
+  await expect(discardDialog).not.toBeVisible();
+  await expect(editorDialog).toBeVisible();
+  await expect(page.locator("body")).toHaveCSS("overflow", "hidden");
+  await page.getByRole("button", { name: "Export", exact: true }).click();
   await page
     .getByRole("button", { name: "Render 4-second preview", exact: true })
     .click();
@@ -158,6 +189,12 @@ test("interactive caption library, logo layout and short render use persisted se
     .locator(".composition-editor")
     .screenshot({ path: "../../.local/editor-preview-desktop.png" });
   await page.setViewportSize({ width: 390, height: 844 });
+  const mobilePreviewBox = (await preview.boundingBox())!;
+  const mobileRailBox = (await rail.boundingBox())!;
+  const mobileInspectorBox = (await inspector.boundingBox())!;
+  expect(mobilePreviewBox.y + mobilePreviewBox.height).toBeLessThanOrEqual(mobileRailBox.y);
+  expect(mobileRailBox.y + mobileRailBox.height).toBeLessThanOrEqual(mobileInspectorBox.y);
+  await expect(preview).toHaveCSS("overflow", "auto");
   await page.screenshot({ path: "../../.local/redesign-editor-mobile.png" });
   expect(
     await page.evaluate(
@@ -178,8 +215,9 @@ test("interactive caption library, logo layout and short render use persisted se
   const saved = (await (await page.request.get(`${base}/clips`)).json()).find(
     (item: { id: string }) => item.id === clip.id,
   );
-  expect(saved.caption_config.primary_color).toBe("#ff9922");
-  expect(saved.caption_config.animation).toBe("pop");
+  await expect(editorDialog).not.toBeVisible();
+  await expect(page.locator("body")).not.toHaveCSS("overflow", "hidden");
+  expect(saved.caption_config.animation).toBe("word-pop");
   expect(saved.overlay_config.logo_position).toBe("top-center");
   expect(saved.overlay_config.logo_opacity).toBe(0.6);
   expect((await (await page.request.get(`${base}/clips`)).json()).length).toBe(
@@ -206,4 +244,12 @@ test("interactive caption library, logo layout and short render use persisted se
   expect(createHash("sha256").update(finalBytes).digest("hex")).toBe(
     createHash("sha256").update(previewBytes).digest("hex"),
   );
+  } finally {
+    if (projectId) {
+      await page.request.delete(`${api}/projects/${projectId}`, { headers });
+    }
+    if (kitId) {
+      await page.request.delete(`${api}/brand-kits/${kitId}`, { headers });
+    }
+  }
 });

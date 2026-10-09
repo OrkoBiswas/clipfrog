@@ -1,5 +1,6 @@
-export const API_URL =
-  process.env.NEXT_PUBLIC_API_URL ?? "http://localhost:8000";
+// Browser requests use the page's origin. The server gateway resolves the API
+// at runtime, avoiding cross-origin cookies, IPv6 and stale build-time URLs.
+export const API_URL = "";
 export type User = {
   id: string;
   name: string;
@@ -23,6 +24,7 @@ export type Config = {
   semantic_ranking?: boolean;
   brand_kit_id?: string | null;
   caption_config?: import("./editor-types").CaptionStyle | null;
+  render_config?: import("./editor-types").FramingStyle | null;
   platform_preset?: string;
 };
 export type Project = {
@@ -50,12 +52,27 @@ export async function api<T>(
   path: string,
   options: RequestInit = {},
 ): Promise<T> {
-  const response = await fetch(`${API_URL}/api/v1${path}`, {
-    ...options,
-    credentials: "include",
-    cache: "no-store",
-    headers: { "Content-Type": "application/json", ...options.headers },
-  });
+  const headers = new Headers(options.headers);
+  if (
+    options.body &&
+    !headers.has("Content-Type") &&
+    !(options.body instanceof FormData)
+  )
+    headers.set("Content-Type", "application/json");
+  let response: Response;
+  try {
+    response = await fetch(`${API_URL}/api/v1${path}`, {
+      ...options,
+      credentials: "include",
+      cache: "no-store",
+      headers,
+    });
+  } catch (error) {
+    if (error instanceof Error && error.name === "AbortError") throw error;
+    throw new Error(
+      "Could not connect to the app. Check your connection and refresh the page. If you were rendering, check the clip status before retrying.",
+    );
+  }
   if (!response.ok) {
     const body: { detail?: string | { msg: string }[] } = await response
       .json()

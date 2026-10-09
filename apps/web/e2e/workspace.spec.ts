@@ -10,7 +10,7 @@ test("register, create, edit and delete a project", async ({ page }) => {
     .fill("test-long-password-123");
   await page.getByRole("button", { name: "Create your account" }).click();
   await expect(
-    page.getByRole("heading", { name: "Your workspace" }),
+    page.getByRole("heading", { name: /^Welcome back,/ }),
   ).toBeVisible();
   await page
     .getByRole("link", { name: "New Project", exact: true })

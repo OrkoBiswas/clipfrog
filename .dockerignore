@@ -3,6 +3,7 @@
 node_modules
 **/node_modules
 **/.next
+**/.next-caption-verify
 .venv
 .local
 **/__pycache__

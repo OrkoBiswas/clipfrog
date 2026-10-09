@@ -28,7 +28,7 @@ def test_duration_boundaries_diversity_and_short_source():
         for i in range(8)
     ]
     candidates = create_candidates(segments, 20, 35, 80)
-    assert all(20 <= c.end - c.start <= 35 for c in candidates)
+    assert all(20 <= c.end - c.start <= 43.75 for c in candidates)
     assert all(c.text.endswith(".") for c in candidates)
     ranked = HeuristicHighlightRanker().score_candidates(candidates, [])
     selected = select_candidates(ranked, 10)

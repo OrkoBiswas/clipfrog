@@ -15,7 +15,7 @@ test("upload a real video directly to MinIO and validate through Celery", async 
     .fill("test-long-password-123");
   await page.getByRole("button", { name: "Create your account" }).click();
   await expect(
-    page.getByRole("heading", { name: "Your workspace" }),
+    page.getByRole("heading", { name: /^Welcome back,/ }),
   ).toBeVisible();
   await page
     .getByRole("link", { name: "New Project", exact: true })
@@ -52,6 +52,7 @@ test("upload a real video directly to MinIO and validate through Celery", async 
     .fill("Browser rendered clip");
   await page.getByLabel("Start (seconds)", { exact: true }).fill("0.5");
   await page.getByLabel("End (seconds)", { exact: true }).fill("3.5");
+  await page.getByRole("button", { name: "Text", exact: true }).click();
   await page.getByLabel("Opening title overlay").fill("Real rendered video");
   await page
     .getByRole("button", { name: "Save and render", exact: true })

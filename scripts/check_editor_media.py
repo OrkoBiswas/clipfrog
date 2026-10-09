@@ -1,10 +1,11 @@
 """Render all caption configurations and a deterministic hard-cut framing fixture."""
 
+import math
 import subprocess
 from pathlib import Path
+from typing import get_args
 
-from clipforge_api.clip_schemas import CaptionConfig, OverlayConfig, RenderConfig
-from clipforge_api.services.caption_templates import TEMPLATES
+from clipforge_api.clip_schemas import CaptionAnimation, CaptionConfig, OverlayConfig, RenderConfig
 from clipforge_worker.reframing.planner import plan_crop
 from clipforge_worker.rendering.renderer import render
 from clipforge_worker.transcription.base import Segment, Word
@@ -148,10 +149,11 @@ def main():
             words=words,
         )
     ]
-    sheet = Image.new("RGB", (5 * 220, 5 * 420), "#111827")
+    animations = get_args(CaptionAnimation)
+    sheet = Image.new("RGB", (5 * 220, math.ceil(len(animations) / 5) * 420), "#111827")
     draw = ImageDraw.Draw(sheet)
-    for index, item in enumerate(TEMPLATES):
-        folder = root / item["id"]
+    for index, animation in enumerate(animations):
+        folder = root / animation
         folder.mkdir(exist_ok=True)
         render(
             source,
@@ -161,7 +163,7 @@ def main():
             0,
             3,
             segments,
-            CaptionConfig.model_validate(item["config"]),
+            CaptionConfig(animation=animation, font="Urbanist"),
             OverlayConfig(),
             RenderConfig(quality="Draft"),
         )
@@ -184,10 +186,10 @@ def main():
         with Image.open(folder / "frame.png") as image:
             image.thumbnail((210, 380))
             sheet.paste(image, (index % 5 * 220, index // 5 * 420))
-        draw.text((index % 5 * 220 + 4, index // 5 * 420 + 385), item["name"], fill="white")
-        print(f"Rendered {item['name']}", flush=True)
+        draw.text((index % 5 * 220 + 4, index // 5 * 420 + 385), animation, fill="white")
+        print(f"Rendered {animation}", flush=True)
     sheet.save(root / "caption-contact-sheet.png")
-    print("All 25 caption renders and static hard-cut pixel checks passed.", flush=True)
+    print(f"All {len(animations)} caption renders and static hard-cut pixel checks passed.", flush=True)
 
 
 if __name__ == "__main__":

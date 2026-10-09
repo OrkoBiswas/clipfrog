@@ -79,6 +79,24 @@ def test_csrf_and_validation(client):
     assert client.get("/openapi.json").status_code == 200
 
 
+def test_brand_template_name_keeps_project_readable(client):
+    register(client)
+    kit = client.post(
+        "/api/v1/brand-kits",
+        json={"name": "Studio identity", "captions": {"style": "Kinetic Bold"}},
+    )
+    assert kit.status_code == 201
+    project = client.post("/api/v1/projects", json={"name": "Branded project"}).json()
+    project_path = f"/api/v1/projects/{project['id']}"
+    assert client.put(f"{project_path}/brand", json={"kit_id": kit.json()["id"]}).status_code == 200
+    saved = client.get(project_path)
+    assert saved.status_code == 200
+    assert saved.json()["processing_config"]["caption_style"] == "Kinetic Bold"
+    projects = client.get("/api/v1/projects")
+    assert projects.status_code == 200
+    assert projects.json()[0]["processing_config"]["caption_style"] == "Kinetic Bold"
+
+
 def test_duplicate_registration_and_expired_token(client):
     register(client)
     assert register(client).status_code == 409

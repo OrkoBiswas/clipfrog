@@ -8,10 +8,12 @@ export function DashboardOnboarding({
   userId,
   hasProject,
   hasSource,
+  projectId,
 }: {
   userId: string;
   hasProject: boolean;
   hasSource: boolean;
+  projectId?: string;
 }) {
   const [hidden, setHidden] = useState(false);
   useEffect(() => {
@@ -44,13 +46,27 @@ export function DashboardOnboarding({
       </div>
       <ol>
         {[
-          ["Upload a video", hasSource],
-          ["Choose your clip style", hasProject],
-          ["Generate and customize", false],
-        ].map(([label, done], index) => (
-          <li key={String(label)} className={done ? "complete" : ""}>
-            <span>{done ? <Check size={12} /> : index + 1}</span>
-            {label}
+          {
+            label: "Create a project",
+            done: hasProject,
+            href: "/projects/new",
+          },
+          {
+            label: "Add your video",
+            done: hasSource,
+            href: projectId ? `/projects/${projectId}#source` : "/projects/new",
+          },
+          {
+            label: "Create your first clip",
+            done: false,
+            href: projectId ? `/projects/${projectId}` : "/projects/new",
+          },
+        ].map(({ label, done, href }, index) => (
+          <li key={label} className={done ? "complete" : ""}>
+            <span>
+              {done ? <Check size={12} aria-label="Completed" /> : index + 1}
+            </span>
+            <Link href={href}>{label}</Link>
           </li>
         ))}
       </ol>
@@ -97,7 +113,7 @@ function RecentClip({ clip, project }: { clip: Clip; project: Project }) {
     };
   }, [clip.id, clip.output_asset_id, project.id]);
   return (
-    <Link className="recent-clip" href={`/projects/${project.id}`}>
+    <Link className="recent-clip" href={`/projects/${project.id}#clips`}>
       <div className="recent-clip-visual">
         {url ? (
           <video

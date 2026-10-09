@@ -36,7 +36,7 @@ docker compose up -d postgres redis minio minio-init mailpit
 npm install
 python -m venv .venv
 # Activate .venv (Windows: .venv\Scripts\Activate.ps1; POSIX: source .venv/bin/activate)
-pip install -e '.[dev]'
+pip install -e '.[dev,vision]'
 alembic -c apps/api/alembic.ini upgrade head
 uvicorn clipforge_api.main:app --reload --port 8000
 ```
@@ -51,6 +51,8 @@ npm run dev
 Run Celery in Docker on Windows (Celery does not support Windows prefork).
 
 ## Checks
+
+The redesigned workspace includes Dark/Light/System appearance, command search (Ctrl/Cmd+K), an upload-first project wizard, and an integrated clip/caption editor. New projects can also be configured as drafts before uploading. See [frontend progress and verification](CODEX_PROGRESS.md) and the [interface design system](design-system/clipforge/MASTER.md).
 
 ```bash
 npm run lint
@@ -83,7 +85,11 @@ Uploads go directly from the browser to signed multipart URLs. Pause/retry prese
 
 Run `python scripts/check_upload_recovery.py` after generating `.local/fixture.mp4` to exercise interrupted completion and cancellation against real storage. The scheduled maintenance worker expires uploads and authentication sessions and republishes stale jobs only when their worker lock is available. After running the speech pipeline checks below, `python scripts/check_recovery.py` verifies that a live worker lock is respected, an interrupted cancellation completes, and a committed-but-undelivered job recovers.
 
-After validation, choose **Analyze video** for real faster-whisper transcription, scene detection and sampled face analysis. The first analysis downloads the open-source speech model to the persistent model cache. Choose **Find highlights** to score natural sentence windows, audio energy and visual signals, then select distinct moments. Results include score explanations; a short source may produce fewer clips than requested. Render the selected highlights, preview MP4s, edit trims/captions/framing and render new revisions. Manual clips support validated sources without speech. Completed clips can be downloaded individually or packaged as a ZIP.
+After validation, choose **Analyze video** for real faster-whisper transcription, scene detection and sampled face analysis. The first analysis downloads the open-source speech model to the persistent model cache. Choose **Find highlights** to compare complete ideas throughout the video. The local engine joins sentences across transcription chunks, evaluates alternative durations, marks uncertain word-aligned cuts, and ranks opening hooks, standalone context, explanation/action, examples, outcomes and delivery. Repetition, housekeeping, promotion and unresolved endings reduce scores. Face detection informs framing, not highlight value. Topic-aware diversity reduces repeated takes and related selections. Results include explanations; a short source may produce fewer clips than requested. Render the selected highlights, preview MP4s, edit trims/captions/framing and render new revisions. Manual clips support validated sources without speech. Completed clips can be downloaded individually or packaged as a ZIP.
+
+**Preview moment**, **Good clip** and **Poor clip** are available beside each new highlight. A poor rating excludes that moment from the current render batch and substantially overlapping proposals from future searches in that project. Clicking a pressed rating clears it. Ratings survive highlight regeneration and remain private to the account that submitted them. Deleting a project also removes its feedback. Old results need **Find highlights** again before they can be rated.
+
+The internal preference learner uses explicit ratings and the original scoring features, without external AI calls or self-generated training labels. It starts evaluating preferences after at least three good and three poor ratings; weights change only when a leave-one-rating-out check improves preference loss without reducing classification accuracy. Adjustments are bounded to 25% of the configured weights and remain on a 100-point scale. New searches use the learned weights; existing clips are not silently rescored. This is a local editorial ranker with supervised preference adaptation, not a pretrained semantic/video understanding model or a prediction of viral views. English, Bengali, Hindi and Spanish cue sets supplement language-neutral timing, punctuation, repetition and delivery checks; other languages receive the structural checks. No-word transcripts cannot be safely cut inside an oversized segment.
 
 ## Brand kits
 
@@ -108,13 +114,21 @@ These commands create an isolated account, upload through multipart storage, ana
 
 ## Interactive clip editor
 
+Under **Layout & safe area** in **Project settings > Edit project settings > Captions & brand**, the template customizer, or the clip editor's Captions panel, turn **Multiple screens** on or off. When enabled, the API and worker inspect the original footage with the bundled YuNet detector, cache its results, and automatically choose a two-person collage or a three/four-person grid. This includes profile faces and people near source edges. Panel crops focus on individual people; a low aesthetic framing score alone does not suppress a detected person. Single-person shots and footage without reliable detections stay full screen. Layout follows camera cuts and sustained changes in the number of people, holding through brief detector losses. Preview and export use the same crops, one playback clock and one audio track; captions, titles and logos apply over the complete composition. Saving project settings sets defaults for new clips; applying a template can update selected existing clips. Use **Render clip** to regenerate older automatic renders with the new detector, or **Save and render** after editing settings. The model and its license are in `assets/vision`.
+
+Automatic highlights end at completed statements and natural pauses. Unanswered closing questions, ellipses and rushed continuations are excluded from selection. A sentence that starts within the target duration can finish up to 25% (at most 12 seconds) beyond it, with a short tail after the final word that stops before the next utterance. Clips remain capped at 180 seconds. Finding highlights again applies the new selection rules; generating from older highlights finishes a nearby answer when possible and asks for new highlights if it cannot find a safe ending. Manually chosen trims remain exact.
+
+Captions use speech-bounded word timing shared by the editor, video renderer and clip SRT downloads. Text, backgrounds and word effects disappear during pauses of at least 250ms and restart when speech resumes. Unchanged transcript cues retain their word timestamps; edited wording is distributed over the source's spoken runs. Without a transcript, explicit cue times are used. Re-render existing videos to apply this timing.
+
 Open a project and choose **Edit clip** (or **Create manual clip**). The composition preview shows the cropped source, captions, title, watermark and logo. Drag the source to override automatic framing, or drag captions/the logo to reposition them. Automatic static framing stays fixed within each detected source shot and switches immediately at a scene cut. Low framing scores block automatic rendering; manually inspect and correct the crop when needed. Footage without reliable face detections is explicitly unscored.
 
-Choose among 25 caption templates, then change typography, colors, stroke, position, word grouping and animation. Save custom templates and manage favorites, recent choices and your default. Brand Kit can reuse these settings. Fonts are bundled with their license files in `apps/web/public/fonts`.
+Open **Templates** for 24 creator-style, word-timed caption presets with animated previews, category/font search, and a customization workbench. Twelve speech-synchronized effects include spring, punch, rise, slide, tilt, focus, flip, elastic, highlight pill/block, underline and glow; legacy phrase effects remain available. Choose full-phrase emphasis, build-up sentences or centered single words, with adjustable active-word scale and inactive opacity. Motion follows transcript word timestamps; edited wording stays within the source's spoken runs. Long single words shrink to fit. Choose 16 bundled font families with 223 real weight/italic variants, including Medium and Black where the family supports them. Font width presets (Condensed, Normal, Wide and Extra wide) adjust letter proportions independently of caption box width. Adjust typography, colors, outline, shadow, background, placement, safe area, grouping and motion duration. The same controls are available in the clip editor and project wizard. Apply a style to existing clips without changing their transcript, then render them to update exported videos. Personal presets are saved per account in this browser; applied settings are persisted with each clip. Fonts ship with licenses in `assets/fonts/caption` and `apps/web/public/fonts/caption`; the shared catalog is `packages/shared/caption-fonts.json`. Only selected browser faces load, and the worker installs the same real faces for export. Regenerate from the pinned source lock with `python scripts/build_caption_fonts.py` (requires fonttools and brotli).
+
+`node scripts/verify_caption_gallery.mjs` checks the gallery, customization, preset persistence and apply flow against an in-memory API on ports 3100/8101. It creates no accounts or projects in the live workspace. Screenshots and a preset manifest are written to ignored `.local/caption-collection/`.
 
 **Render 4-second preview** uses the same FFmpeg pipeline as final output and counts toward render usage. The instant browser preview approximates animation and text wrapping; use the rendered preview to judge exact appearance. Preview clips stay out of the clip library and ZIP exports, but their stored media counts toward storage until the project is deleted.
 
-Run `python scripts/check_editor_media.py` for all 25 real caption renders and a deterministic hard-cut crop pixel check. Outputs are written to `.local/editor-validation/`. The editor browser test also confirms identical preview/final MP4 hashes for the same four-second composition. Synthetic face annotations test crop geometry; they do not establish real-world face-detector or active-speaker accuracy.
+Run `python scripts/check_editor_media.py` for all native caption animations and a deterministic hard-cut crop pixel check. Outputs are written to `.local/editor-validation/`. The editor browser test also confirms identical preview/final MP4 hashes for the same four-second composition. Synthetic face annotations test crop geometry; they do not establish real-world face-detector or active-speaker accuracy.
 
 Local upload is available after creating a project, in **Source video → Choose source video → Upload video**. YouTube URL ingestion is not implemented; the original build specification starts with local files.
 
@@ -124,9 +138,8 @@ Local upload is available after creating a project, in **Source video → Choose
 
 Use managed PostgreSQL/Redis, private S3-compatible storage, TLS termination, backups, and dedicated worker containers for production. Never expose database, Redis or MinIO admin ports publicly. Configure storage CORS for your frontend origin. Run migrations as a single release job before rolling API/worker updates. Do not run FFmpeg inside serverless request handlers.
 
-CPU defaults: `WORKER_DEVICE=cpu`, `WHISPER_COMPUTE_TYPE=int8`. GPU deployment needs a CUDA-compatible worker image and device access; setting `WORKER_DEVICE=cuda` alone is insufficient. Optional semantic scoring requires `AI_PROVIDER=openai-compatible`, `AI_API_KEY`, `AI_BASE_URL`, `AI_MODEL` and project opt-in. Provider failures retain local scores. `HIGHLIGHT_WEIGHTS` accepts seven nonnegative integer weights totaling 100.
+CPU defaults: `WORKER_DEVICE=cpu`, `WHISPER_COMPUTE_TYPE=int8`. GPU deployment needs a CUDA-compatible worker image and device access; setting `WORKER_DEVICE=cuda` alone is insufficient. Highlight scoring and preference learning run locally; the legacy `semantic_ranking` input is retained for compatibility and does not trigger cloud requests. `HIGHLIGHT_WEIGHTS` accepts seven nonnegative integer weights totaling 100.
 
 Optional Stripe checkout, customer portal and signed subscription webhooks are implemented. Configure `STRIPE_SECRET_KEY`, `STRIPE_WEBHOOK_SECRET`, `STRIPE_PRICE_CREATOR` and `STRIPE_PRICE_PRO` for your test account and send webhooks to `/api/v1/billing/webhook`. Live provider acceptance still requires your Stripe credentials; automated tests mock the provider. Local clipping works without billing or AI credentials, within the configured free-plan quotas.
 
 To stop without deleting data: `docker compose down`. Local data lives in named volumes; only use `docker compose down -v` when deliberately discarding all local accounts and media.
-

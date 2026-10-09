@@ -1,27 +1,22 @@
-export const CAPTION_FONTS = [
-  "DejaVu Sans",
-  "Noto Sans",
-  "Bebas Neue",
-  "Lato",
-  "Montserrat",
-  "Open Sans",
-  "Roboto",
-] as const;
+import type { CaptionAnimation } from "./caption-effects";
 
 export type CaptionStyle = {
   enabled?: boolean;
   style?: string;
-  template_id?: string | null;
   font?: string;
   punctuation?: boolean;
   remove_special_characters?: boolean;
   weight?: number;
+  font_width?: number;
+  italic?: boolean;
   size?: number;
   primary_color?: string;
   highlight_color?: string;
   outline?: number;
   stroke_color?: string;
   shadow?: number;
+  shadow_color?: string;
+  shadow_opacity?: number;
   spacing?: number;
   uppercase?: boolean;
   highlight?: boolean;
@@ -31,7 +26,12 @@ export type CaptionStyle = {
   background?: boolean;
   background_color?: string;
   background_opacity?: number;
-  animation?: string;
+  animation?: CaptionAnimation;
+  animation_duration?: number;
+  effect_color?: string;
+  word_display?: "full" | "build" | "single";
+  active_scale?: number;
+  inactive_opacity?: number;
   x?: number;
   y?: number;
   width?: number;
@@ -53,7 +53,27 @@ export type OverlayStyle = {
   logo_x?: number | null;
   logo_y?: number | null;
 };
+export type SplitLayout = "single" | "auto" | "stacked" | "side-by-side" | "grid";
+export type PanelStyle = {
+  subject?: "primary" | "left" | "center" | "right" | "person-1" | "person-2" | "person-3" | "person-4";
+  anchor_x?: number | null;
+  anchor_y?: number | null;
+  zoom?: number;
+};
+export type CropKeyframe = { time: number; x: number; y: number; cut: boolean };
+export type PreviewPanel = {
+  x: number;
+  y: number;
+  width: number;
+  height: number;
+  subject: string;
+  crop_width: number;
+  crop_height: number;
+  keyframes: CropKeyframe[];
+};
 export type FramingStyle = {
+  layout?: SplitLayout;
+  panels?: PanelStyle[];
   quality?: string;
   crop_mode?: string;
   anchor_x?: number | null;
@@ -68,30 +88,31 @@ export type FramingStyle = {
   horizontal_dead_zone?: number;
   vertical_dead_zone?: number;
 };
-export type Template = {
-  id: string;
-  name: string;
-  category: string;
-  config: CaptionStyle;
-};
-export type Library = {
-  items: Template[];
-  favorites: string[];
-  recent: string[];
-  default: string | null;
+export type PreviewScene = {
+  start: number;
+  end: number;
+  layout: SplitLayout;
+  panels: PreviewPanel[];
+  crop_width: number;
+  crop_height: number;
+  keyframes: CropKeyframe[];
 };
 export type PreviewData = {
+  caption_segments?: PreviewData["segments"];
   source_url: string;
   logo_url: string | null;
   debug_allowed: boolean;
   plan: {
+    layout?: SplitLayout;
+    panels?: PreviewPanel[];
+    scenes?: PreviewScene[];
     source_width: number;
     source_height: number;
     crop_width: number;
     crop_height: number;
     output_width: number;
     output_height: number;
-    keyframes: { time: number; x: number; y: number; cut: boolean }[];
+    keyframes: CropKeyframe[];
     warnings: string[];
     quality: {
       score?: number | null;

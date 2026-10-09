@@ -11,7 +11,7 @@ jobs:
         with: {python-version: '3.12'}
       - run: npm ci
       - run: npm run lint && npm run typecheck && npm test && npm run build
-      - run: pip install -e '.[dev]'
+      - run: pip install -e '.[dev,vision]'
       - run: sudo apt-get update && sudo apt-get install -y ffmpeg fonts-dejavu-core fonts-noto-core
       - run: ruff check . && mypy && pytest
       - run: cp .env.example .env

@@ -3,6 +3,16 @@ import { cookies } from "next/headers";
 import { redirect } from "next/navigation";
 import type { User } from "./api";
 
+export class ServerApiError extends Error {
+  constructor(
+    readonly status: number,
+    readonly path: string,
+  ) {
+    super(`API request failed with status ${status}: ${path}`);
+    this.name = "ServerApiError";
+  }
+}
+
 export async function serverApi<T>(path: string): Promise<T> {
   const jar = await cookies();
   const response = await fetch(
@@ -13,8 +23,7 @@ export async function serverApi<T>(path: string): Promise<T> {
     },
   );
   if (response.status === 401) redirect("/login");
-  if (!response.ok)
-    throw new Error("Could not load your workspace. Please try again.");
+  if (!response.ok) throw new ServerApiError(response.status, path);
   return response.json() as Promise<T>;
 }
 export const getUser = () => serverApi<User>("/me");

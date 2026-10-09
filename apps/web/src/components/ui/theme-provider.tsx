@@ -30,8 +30,6 @@ function snapshot(): Theme {
     return sessionTheme ?? "dark";
   }
 }
-export const themeScript = `try{var t=localStorage.getItem('clipforge-theme')||'dark';document.documentElement.dataset.theme=t==='system'?(matchMedia('(prefers-color-scheme: dark)').matches?'dark':'light'):t}catch{}`;
-
 export function ThemeProvider({ children }: { children: React.ReactNode }) {
   const theme = useSyncExternalStore(
     subscribe,

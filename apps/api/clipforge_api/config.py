@@ -1,7 +1,8 @@
 from functools import lru_cache
+from urllib.parse import urlsplit
 
-from pydantic_settings import BaseSettings, SettingsConfigDict
 from pydantic import Field
+from pydantic_settings import BaseSettings, SettingsConfigDict
 
 
 class Settings(BaseSettings):
@@ -29,6 +30,16 @@ class Settings(BaseSettings):
     stripe_webhook_secret: str = ""
     stripe_price_creator: str = ""
     stripe_price_pro: str = ""
+
+    @property
+    def trusted_origins(self) -> list[str]:
+        """Treat loopback names as aliases only for a loopback-configured app."""
+        origin = self.app_url.rstrip("/")
+        parsed = urlsplit(origin)
+        if parsed.hostname not in {"localhost", "127.0.0.1", "::1"}:
+            return [origin]
+        port = f":{parsed.port}" if parsed.port else ""
+        return [f"{parsed.scheme}://{host}{port}" for host in ("localhost", "127.0.0.1", "[::1]")]
 
 
 @lru_cache

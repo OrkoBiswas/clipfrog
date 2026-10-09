@@ -11,6 +11,7 @@ class WorkerSettings(BaseSettings):
     whisper_compute_type: str = "int8"
     model_cache: str = "/home/appuser/.cache/clipforge"
     face_model_path: str = "/opt/models/blaze_face_short_range.tflite"
+    collage_face_model_path: str = "/opt/models/face_detection_yunet_2023mar.onnx"
     analysis_fps: float = 3
     highlight_weights: dict[str, int] = Field(
         default_factory=lambda: {

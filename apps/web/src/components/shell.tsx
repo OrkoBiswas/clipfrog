@@ -13,7 +13,7 @@ import {
   Film,
   Folder,
   LayoutDashboard,
-  LayoutTemplate,
+  Captions,
   LogOut,
   Menu,
   PanelLeftClose,
@@ -37,8 +37,8 @@ const navigation = [
   ["Dashboard", "/dashboard", LayoutDashboard],
   ["Projects", "/projects", Folder],
   ["Clips", "/clips", Film],
+  ["Templates", "/templates", Captions],
   ["Brand Kit", "/brand-kit", Palette],
-  ["Templates", "/templates", LayoutTemplate],
   ["Usage", "/usage", ChartNoAxesColumn],
   ["Billing", "/billing", CreditCard],
   ["Settings", "/settings", Settings],
@@ -307,9 +307,13 @@ export function Shell({
         <Plus size={17} />
         <span className="nav-text">New Project</span>
       </Link>
-      <div className="nav-label">WORKSPACE</div>
+      <div className="nav-label">YOUR STUDIO</div>
       <nav aria-label="Main navigation" className="nav-section">
-        {navigation.slice(0, 5).map(navLink)}
+        {navigation.slice(0, 3).map(navLink)}
+      </nav>
+      <div className="nav-label">MAKE IT YOURS</div>
+      <nav aria-label="Creative tools" className="nav-section">
+        {navigation.slice(3, 5).map(navLink)}
       </nav>
       <div className="nav-label">MANAGE</div>
       <nav aria-label="Account navigation" className="nav-section">
@@ -344,7 +348,7 @@ export function Shell({
             <Scissors aria-hidden="true" />
           </span>
           <span className="brand-word">
-            ClipForge <small>AI</small>
+            ClipForge <small>STUDIO</small>
           </span>
         </Link>
         {nav}
@@ -580,7 +584,7 @@ export function Shell({
           {commands.length === 0 && (
             <div className="empty">
               <h3>No results found</h3>
-              <p>Try a project name or a page like Templates.</p>
+              <p>Try a project name or page name.</p>
             </div>
           )}
         </div>
@@ -710,10 +714,6 @@ export function Shell({
           <Link href="/projects/new" onClick={() => setPanel(null)}>
             <Plus size={18} />
             Create a project
-          </Link>
-          <Link href="/templates" onClick={() => setPanel(null)}>
-            <LayoutTemplate size={18} />
-            Explore caption styles
           </Link>
         </div>
         <hr />

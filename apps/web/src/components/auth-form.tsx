@@ -2,20 +2,18 @@
 
 import { useRef, useState } from "react";
 import Link from "next/link";
+import Image from "next/image";
 import { useRouter } from "next/navigation";
 import {
   ArrowLeft,
   ArrowRight,
-  Check,
   CheckCircle2,
   Eye,
   EyeOff,
-  Film,
   LoaderCircle,
   LockKeyhole,
   Mail,
   Scissors,
-  Sparkles,
 } from "lucide-react";
 import { api } from "@/lib/api";
 import "./account-pages.css";
@@ -108,6 +106,13 @@ export function AuthForm({ mode }: { mode: AuthMode }) {
   return (
     <div className="access-layout">
       <aside className="access-story">
+        <Image
+          className="access-story-image"
+          src="/images/creator-studio.png"
+          alt=""
+          fill
+          sizes="(max-width: 680px) 0px, 52vw"
+        />
         <Link href="/" className="access-brand" aria-label="ClipForge home">
           <span>
             <Scissors size={22} aria-hidden="true" />
@@ -116,59 +121,43 @@ export function AuthForm({ mode }: { mode: AuthMode }) {
         </Link>
         <div className="access-story-content">
           <span className="account-kicker">
-            <span className="access-status-dot" /> MADE FOR YOUR BEST MOMENTS
+            <span className="access-status-dot" /> YOUR IDEAS, IN MOTION
           </span>
           <h2>
-            One conversation.
+            Good stories
             <br />
-            <span>Endless possibilities.</span>
+            deserve
+            <br />
+            <span>another life.</span>
           </h2>
           <p>
-            Find the moments that matter. Shape them into stories. Give every
-            great idea a life beyond the original video.
+            That one brilliant idea. The conversation that stays with you. Turn
+            your long videos into moments worth sharing.
           </p>
-          <div className="access-visual" aria-hidden="true">
-            <div className="access-visual-top">
-              <span>
-                <Film size={16} /> Your story starts here
-              </span>
-              <span>01 — ∞</span>
-            </div>
-            <div className="access-waveform">
-              {Array.from({ length: 52 }, (_, i) => (
-                <i
-                  key={i}
-                  style={{ height: `${18 + ((i * 17 + i * i * 7) % 68)}%` }}
-                />
-              ))}
-              <div className="access-selection">
-                <span>
-                  <Scissors size={12} /> A moment worth sharing
-                </span>
-              </div>
-            </div>
-            <div className="access-visual-bottom">
-              <span>Find your highlights</span>
-              <ArrowRight size={16} />
-              <span>Make them yours</span>
-            </div>
-          </div>
-          <div className="access-benefits">
-            <span>
-              <Check size={14} /> Smart highlights
-            </span>
-            <span>
-              <Check size={14} /> Beautiful captions
-            </span>
-            <span>
-              <Check size={14} /> Every platform
-            </span>
-          </div>
         </div>
-        <p className="access-story-footer">
-          <Sparkles size={15} aria-hidden="true" /> Less time editing. More time
-          creating.
-        </p>
+        <ol
+          className="access-story-steps"
+          aria-label="From video to shareable clip"
+        >
+          <li>
+            <span>01</span>
+            <div>
+              Find the moment<small>Discover your highlights</small>
+            </div>
+          </li>
+          <li>
+            <span>02</span>
+            <div>
+              Make your cut<small>Frame, caption, create</small>
+            </div>
+          </li>
+          <li>
+            <span>03</span>
+            <div>
+              Share your story<small>Export for your audience</small>
+            </div>
+          </li>
+        </ol>
       </aside>
       <main className="access-main">
         <Link href="/" className="access-mobile-brand">
@@ -182,6 +171,7 @@ export function AuthForm({ mode }: { mode: AuthMode }) {
               <Scissors size={23} aria-hidden="true" />
             )}
           </div>
+          <p className="access-form-kicker">YOUR CREATIVE WORKSPACE</p>
           <h1>{content.title}</h1>
           <p className="access-description">{content.description}</p>
           {message ? (

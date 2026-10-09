@@ -1,0 +1,4 @@
+BebasNeue-Regular.ttf is the Latin subset from @fontsource/bebas-neue
+5.3.0 (installed project dependency), converted losslessly from WOFF to
+TrueType with fontTools. Upstream: https://github.com/dharmatype/Bebas-Neue
+The web preview uses that same @fontsource font. See OFL.txt for licensing.

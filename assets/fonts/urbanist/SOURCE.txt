@@ -1,0 +1,1 @@
+Urbanist by Corey Hu. Source: https://github.com/coreyhu/Urbanist/tree/549716453f76335ccc5a9e537cbe0da03d6fed34 (fonts/ttf). Unmodified Regular and Bold fonts, licensed under SIL OFL 1.1; see OFL.txt.

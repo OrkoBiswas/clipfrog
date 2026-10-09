@@ -3,7 +3,7 @@ import uuid
 from clipforge_worker.celery_app import celery
 from fastapi import APIRouter, HTTPException
 from pydantic import BaseModel, Field
-from sqlalchemy import func, literal, or_, select
+from sqlalchemy import and_, func, literal, not_, or_, select
 
 from clipforge_api.models import Clip, MediaAsset, ProcessingJob, Project, UsageLedger, User
 from clipforge_api.schemas import ProjectInput, ProjectOut
@@ -17,11 +17,28 @@ class BulkProjectDelete(BaseModel):
     project_ids: list[uuid.UUID] = Field(min_length=1, max_length=100)
 
 
+# The editor E2E spec uses a shared local stack and intentionally creates
+# accounts with this marker. Keep those fixtures out of administrator-facing
+# workspace listings; the test itself still has access to its own project.
+TEST_FIXTURE_PROJECT = and_(
+    Project.name == "Editor acceptance",
+    User.email.like("editor-%@example.com"),
+)
+
+
 def owned_project(
     db: Db, user: CurrentUser, project_id: uuid.UUID, *, lock: bool = False
 ) -> Project:
-    query = select(Project).where(
-        Project.id == project_id, or_(literal(user.is_admin), Project.user_id == user.id)
+    query = (
+        select(Project)
+        .join(User, Project.user_id == User.id)
+        .where(
+            Project.id == project_id,
+            or_(
+                and_(literal(user.is_admin), not_(TEST_FIXTURE_PROJECT)),
+                Project.user_id == user.id,
+            ),
+        )
     )
     if lock:
         query = query.with_for_update().execution_options(populate_existing=True)
@@ -36,7 +53,12 @@ def projects(db: Db, user: CurrentUser, offset: int = 0) -> list[ProjectOut]:
     rows = db.execute(
         select(Project, User.email)
         .join(User, Project.user_id == User.id)
-        .where(or_(literal(user.is_admin), Project.user_id == user.id))
+        .where(
+            or_(
+                and_(literal(user.is_admin), not_(TEST_FIXTURE_PROJECT)),
+                Project.user_id == user.id,
+            )
+        )
         .order_by(Project.created_at.desc())
         .offset(max(0, offset))
         .limit(100)
@@ -175,13 +197,25 @@ def dashboard(db: Db, user: CurrentUser) -> dict[str, object]:
             select(func.count())
             .select_from(Clip)
             .join(Project, Clip.project_id == Project.id)
-            .where(or_(literal(user.is_admin), Project.user_id == user.id))
+            .join(User, Project.user_id == User.id)
+            .where(
+                or_(
+                    and_(literal(user.is_admin), not_(TEST_FIXTURE_PROJECT)),
+                    Project.user_id == user.id,
+                )
+            )
         )
         or 0,
         "projects": db.scalar(
             select(func.count())
             .select_from(Project)
-            .where(or_(literal(user.is_admin), Project.user_id == user.id))
+            .join(User, Project.user_id == User.id)
+            .where(
+                or_(
+                    and_(literal(user.is_admin), not_(TEST_FIXTURE_PROJECT)),
+                    Project.user_id == user.id,
+                )
+            )
         )
         or 0,
         "storage_bytes": db.scalar(

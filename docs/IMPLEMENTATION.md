@@ -1,8 +1,46 @@
 # Implementation record
 
+## Current update — October 9, 2026
+
+The workspace now includes the creator studio redesign, upload-first setup,
+bulk clip actions, 24 browser caption presets, 16 bundled font families with 223
+real weight/italic variants, and automatic two-to-four-person collage framing.
+Caption presets are browser-local; the previous caption-library API is removed,
+and a migration clears its retired rows. Native ASS renders all supported word
+and phrase effects. Legacy external animation settings normalize to Word Pop.
+
+Multiple screens is one toggle under Layout & safe area. Preview and rendering
+inspect original footage with the bundled YuNet model and reuse cached sample
+results. Profile and edge-positioned faces can receive separate panels without
+being rejected for a low aesthetic score. Older automatic renders regenerate
+when their detector version is outdated. Single-person shots stay full screen.
+
+Caption groups and their backgrounds clear during speech pauses in the editor,
+rendered video and clip SRT downloads. Automatic highlights favor completed
+statements and natural pauses, with a short tail after the final word. Local
+editorial scoring and preference learning replace the optional cloud review.
+
+Latest verification: 469 Python tests and 31 frontend unit tests passed. Python
+lint/type checks and frontend lint/type/build checks passed. Browser acceptance
+passed all 12 scenarios, covering the real speech-to-highlight/render pipeline and automatic collage,
+caption pause timing, font persistence, and regeneration of older renders. An
+additional isolated project verified actual two-person footage through detection,
+preview, cached analysis and Celery rendering. Its output retained audio and
+duration. Real-footage verification covers these samples, not every pose or source.
+Brand kits with expanded caption template names remain readable after applying
+them to a project; API validation matches the caption configuration schema.
+
+API, worker and web services run in Docker at localhost:3000/8000. The records
+below describe earlier milestones; this section supersedes their caption-library,
+animation, cloud-review and next-step descriptions. Active-speaker inference,
+YouTube ingestion, load/retention testing and production deployment acceptance
+remain open.
+
+## Earlier milestones
+
 Interactive editor milestone (2026-10-01): fixed the static-crop bug at its source: sustained-motion corrections were being emitted in static mode. Static mode now emits one fixed crop per detected source shot; scene-boundary keyframes remain discrete cuts in the FFmpeg expression. Added robust face samples, eye-line/headroom controls, left/right/two-person selection, configurable framing-quality rejection, manual drag overrides and administrator diagnostics. Two-person quality scoring evaluates both subjects. Active-speaker inference from audio/mouth motion is not implemented; stable primary-person selection is not speaker identification.
 
-Added 25 caption templates with persisted per-user custom templates, favorites, recent selections and default selection. Font/weight/spacing/colors/stroke/background opacity/position/grouping/animation settings are consumed by ASS rendering. Added licensed browser fonts, interactive source/caption/logo composition, safe-zone guides, nine logo positions, normalized drag, size/opacity/margin controls and Brand Kit integration. Short previews are real quota-accounted renders, hidden from normal clip lists/exports. The additive `fa198ac32d70` migration stores the caption library and preview flag.
+Removed the bundled caption preset catalog and clear existing caption-library rows in a one-time migration. Per-user custom template creation, editing, deletion, favorites, recents, and defaults remain available. Word Pop and Color Reveal are the only available caption animations; legacy animation values normalize to Word Pop. Both render natively through ASS. Font/weight/spacing/colors/stroke/background opacity/position/grouping/animation settings are consumed by ASS rendering. Added licensed browser fonts, interactive source/caption/logo composition, safe-zone guides, nine logo positions, normalized drag, size/opacity/margin controls and Brand Kit integration. Short previews are real quota-accounted renders, hidden from normal clip lists/exports. The additive `fa198ac32d70` migration stores the caption library and preview flag.
 
 Validation: 65 Python tests, four frontend unit tests and four browser E2E tests pass; Python/frontend lint and type checks pass. Rebuilt production Docker services, applied migrations and confirmed no Alembic schema drift. Readiness and the Redis/Celery/PostgreSQL/MinIO connectivity checks pass. All 25 styles rendered through FFmpeg; inspected the contact sheet and desktop/mobile editor screenshots. Pixel checks verify fixed framing across a synthetic two-shot source and immediate crop changes at the hard cut. Browser acceptance uploads real media, applies/saves styling and logo settings, renders a preview and final output, and verifies identical MP4 hashes for the same four-second composition. CI includes these media checks.
 

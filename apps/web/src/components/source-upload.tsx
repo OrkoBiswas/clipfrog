@@ -28,12 +28,21 @@ type Upload = {
 };
 type Job = {
   id: string;
+  job_type: string;
   status: string;
   stage: string;
   progress: number;
   error_message: string | null;
   started_at: string | null;
   finished_at: string | null;
+};
+const jobLabels: Record<string, string> = {
+  probe: "Video check",
+  analyze: "Video analysis",
+  highlights: "Highlight search",
+  render: "Clip rendering",
+  export: "Download preparation",
+  delete: "Project removal",
 };
 type Source = {
   filename: string;
@@ -347,8 +356,8 @@ export function SourceUpload({
       {!wizard && (
         <div className="section-head">
           <div>
-            <p className="eyebrow">01 / SOURCE</p>
-            <h2>Your source video</h2>
+            <p className="eyebrow">Step 1 of 4</p>
+            <h2>Upload your video</h2>
           </div>
           {complete && (
             <span className="badge px-success">
@@ -437,7 +446,7 @@ export function SourceUpload({
                 <span className="px-upload-icon">
                   <UploadCloud size={28} strokeWidth={1.7} aria-hidden="true" />
                 </span>
-                <h3>Big ideas start with a video.</h3>
+                <h3>Choose the video you want to turn into clips</h3>
                 <p>Drag and drop your video here, or choose a file.</p>
                 <button
                   type="button"
@@ -563,7 +572,7 @@ export function SourceUpload({
                 <Clock3 size={22} aria-hidden="true" />
               )}
               <div>
-                <h3>{job.stage.replaceAll("_", " ")}</h3>
+                <h3>{jobLabels[job.job_type] ?? "Video processing"}</h3>
                 <p className="muted">
                   {processing
                     ? "You can leave this page. We’ll keep working."
@@ -576,7 +585,7 @@ export function SourceUpload({
           {processing && (
             <>
               <div className="px-progress-label">
-                <span>Reported progress</span>
+                <span>Progress</span>
                 <strong>{Math.round(job.progress)}%</strong>
               </div>
               <progress
@@ -590,7 +599,7 @@ export function SourceUpload({
                 </span>
                 <span className="is-current">
                   <LoaderCircle size={14} aria-hidden="true" />{" "}
-                  {job.stage.replaceAll("_", " ")}
+                  {jobLabels[job.job_type] ?? "Processing"}
                 </span>
                 <span>Next: review your results</span>
               </div>
@@ -611,6 +620,10 @@ export function SourceUpload({
               seconds elapsed
             </p>
           )}
+          <details className="px-workflow-details">
+            <summary>Processing details</summary>
+            <p className="muted">Current stage: {job.stage.replaceAll("_", " ")}</p>
+          </details>
           {job.error_message && (
             <p className="form-error" role="alert">
               {job.error_message}

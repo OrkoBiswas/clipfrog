@@ -1,30 +1,86 @@
 import { test, expect } from "@playwright/test";
 import path from "node:path";
 
-test("upload-first wizard keeps the uploaded draft through review", async ({ page }) => {
-  test.setTimeout(90_000);
-  const registration = await page.request.post("http://localhost:8000/api/v1/auth/register", { headers: { Origin: "http://localhost:3000" }, data: { name: "Wizard Creator", email: `wizard-${Date.now()}@example.com`, password: "test-long-password-123" } });
+test("upload-first wizard keeps the uploaded draft through review", async ({
+  page,
+}) => {
+  test.setTimeout(180_000);
+  const registration = await page.request.post(
+    "http://localhost:8000/api/v1/auth/register",
+    {
+      headers: { Origin: "http://localhost:3000" },
+      data: {
+        name: "Wizard Creator",
+        email: `wizard-${Date.now()}@example.com`,
+        password: "test-long-password-123",
+      },
+    },
+  );
   expect(registration.ok(), await registration.text()).toBeTruthy();
   await page.goto("/projects/new");
-  await page.getByLabel("Choose source video").setInputFiles(path.resolve("../../.local/fixture.mp4"));
+  await page.waitForLoadState("networkidle");
+  await page
+    .getByLabel("Choose source video")
+    .setInputFiles(path.resolve("../../.local/fixture.mp4"));
   await expect(page.getByLabel("Project name")).toHaveValue("fixture");
   await page.getByRole("button", { name: "Upload video", exact: true }).click();
-  await expect(page.getByText("Upload complete", { exact: true })).toBeVisible({ timeout: 60_000 });
+  await expect(
+    page.getByText("Upload complete. Your video is safely in your project.", {
+      exact: true,
+    }),
+  ).toBeVisible({ timeout: 60_000 });
   await page.getByRole("button", { name: "Continue", exact: true }).click();
-  await page.getByRole("textbox", { name: "Project name", exact: true }).fill("Upload-first acceptance");
+  await expect(page.getByRole("radio", { name: /Auto/ })).toBeChecked();
+  await page
+    .getByRole("textbox", { name: "Project name", exact: true })
+    .fill("Upload-first acceptance");
   await page.getByRole("button", { name: "Continue", exact: true }).click();
+  const advanced = page.locator("details").filter({ has: page.locator("summary", { hasText: "Advanced highlight search settings" }) });
+  await expect(advanced).not.toHaveAttribute("open", "");
+  await advanced.locator("summary").click();
+  await expect(page.getByText("Higher values are more selective and may return fewer highlights.")).toBeVisible();
+  await advanced.locator("summary").click();
+  await page.screenshot({ path: path.resolve("../../.local/guided-setup-desktop.png"), fullPage: true });
+  await page.setViewportSize({ width: 375, height: 812 });
+  expect(await page.evaluate(() => document.documentElement.scrollWidth <= innerWidth + 1)).toBe(true);
+  await page.screenshot({ path: path.resolve("../../.local/guided-setup-mobile.png"), fullPage: true });
+  await page.setViewportSize({ width: 1280, height: 900 });
   await page.getByRole("button", { name: "30 sec", exact: true }).click();
   await page.getByRole("button", { name: "Continue", exact: true }).click();
   await page.getByRole("button", { name: "Continue", exact: true }).click();
-  await expect(page.getByRole("heading", { name: "Everything look right?" })).toBeVisible();
-  await expect(page.getByRole("button", { name: "Create project", exact: true })).toBeVisible();
-  const projectsBefore = await (await page.request.get("http://localhost:8000/api/v1/projects")).json();
+  await expect(
+    page.getByRole("heading", { name: "Everything look right?" }),
+  ).toBeVisible();
+  await expect(
+    page.getByRole("button", { name: "Create project", exact: true }),
+  ).toBeVisible();
+  const projectsBefore = await (
+    await page.request.get("http://localhost:8000/api/v1/projects")
+  ).json();
   expect(projectsBefore).toHaveLength(1);
-  await expect.poll(async () => (await (await page.request.get(`http://localhost:8000/api/v1/projects/${projectsBefore[0].id}/jobs`)).json())[0]?.status).toBe("SUCCEEDED");
-  await page.getByRole("button", { name: "Create project", exact: true }).click();
+  await expect
+    .poll(
+      async () =>
+        (
+          await (
+            await page.request.get(
+              `http://localhost:8000/api/v1/projects/${projectsBefore[0].id}/jobs`,
+            )
+          ).json()
+        )[0]?.status,
+      { timeout: 60_000 },
+    )
+    .toBe("SUCCEEDED");
+  await page
+    .getByRole("button", { name: "Create project", exact: true })
+    .click();
   await page.getByRole("link", { name: "Open project", exact: true }).click();
-  await expect(page.getByRole("heading", { name: "Upload-first acceptance" })).toBeVisible();
-  const projectsAfter = await (await page.request.get("http://localhost:8000/api/v1/projects")).json();
+  await expect(
+    page.getByRole("heading", { name: "Upload-first acceptance" }),
+  ).toBeVisible();
+  const projectsAfter = await (
+    await page.request.get("http://localhost:8000/api/v1/projects")
+  ).json();
   expect(projectsAfter).toHaveLength(1);
   expect(projectsAfter[0].id).toBe(projectsBefore[0].id);
   expect(projectsAfter[0].source_asset_id).toBeTruthy();

@@ -15,7 +15,6 @@ from clipforge_api.routes import (
     auth,
     billing,
     brands,
-    caption_templates,
     clips,
     highlights,
     jobs,
@@ -30,13 +29,6 @@ from clipforge_api.storage import s3
 
 configure_logging()
 app = FastAPI(title="ClipForge API", version="0.1.0")
-app.add_middleware(
-    CORSMiddleware,
-    allow_origins=[settings().app_url],
-    allow_credentials=True,
-    allow_methods=["GET", "POST", "PUT", "PATCH", "DELETE"],
-    allow_headers=["Content-Type"],
-)
 logger = logging.getLogger("clipforge")
 
 
@@ -54,9 +46,21 @@ async def request_safety(request: Request, call_next):  # type: ignore[no-untype
         request.method not in {"GET", "HEAD", "OPTIONS"}
         and request.url.path != "/api/v1/billing/webhook"
     ):
-        if request.headers.get("origin") != settings().app_url:
+        if request.headers.get("origin") not in settings().trusted_origins:
             return JSONResponse({"detail": "Untrusted request origin."}, status_code=403)
-    response = await call_next(request)
+    try:
+        response = await call_next(request)
+    except Exception:
+        logger.exception(
+            "request_failed", extra={"request_id": request_id, "path": request.url.path}
+        )
+        response = JSONResponse(
+            {
+                "detail": "The server could not complete this request. Please try again.",
+                "request_id": request_id,
+            },
+            status_code=500,
+        )
     response.headers["X-Request-ID"] = request_id
     response.headers["X-Content-Type-Options"] = "nosniff"
     logger.info(
@@ -113,5 +117,15 @@ app.include_router(highlights.router, prefix="/api/v1")
 app.include_router(clips.router, prefix="/api/v1")
 app.include_router(billing.router, prefix="/api/v1")
 app.include_router(brands.router, prefix="/api/v1")
-app.include_router(caption_templates.router, prefix="/api/v1")
 app.include_router(operations.router, prefix="/api/v1")
+
+# Outside request_safety so handled server errors also carry CORS headers.
+# Foreign origins remain blocked; never reflect arbitrary origins with cookies.
+app.add_middleware(
+    CORSMiddleware,
+    allow_origins=settings().trusted_origins,
+    allow_credentials=True,
+    allow_methods=["GET", "HEAD", "POST", "PUT", "PATCH", "DELETE"],
+    allow_headers=["Content-Type"],
+    expose_headers=["X-Request-ID"],
+)

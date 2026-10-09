@@ -1,9 +1,14 @@
 "use client";
 import Image from "next/image";
+import { createPortal } from "react-dom";
 import { useEffect, useRef, useState, type PointerEvent } from "react";
 import { api } from "@/lib/api";
 import { layoutCaptionWords, safeCharacterLimit } from "@/lib/caption-layout";
-import { captionCSS } from "./caption-studio";
+import { normalizeCaptionAnimation } from "@/lib/caption-effects";
+import { CaptionText } from "./caption-text";
+import { captionCSS } from "@/lib/caption-style";
+import { cropAtTime, panelsForLayout } from "@/lib/split-screen";
+import { SplitScreenVideo } from "./split-screen-video";
 import { Maximize, Pause, Play, Volume2 } from "lucide-react";
 import { Toggle } from "./ui/primitives";
 import { timecode } from "./studio-controls";
@@ -30,8 +35,12 @@ export function CompositionPreview({
   onCaption,
   onOverlay,
   onFraming,
+  controlsContainer,
+  activeTool,
 }: {
   projectId: string;
+  controlsContainer?: HTMLDivElement | null;
+  activeTool?: string;
   body: Body;
   onCaption: (value: CaptionStyle) => void;
   onOverlay: (value: OverlayStyle) => void;
@@ -50,8 +59,20 @@ export function CompositionPreview({
   const [volume, setVolume] = useState(1);
   const video = useRef<HTMLVideoElement>(null);
   const canvas = useRef<HTMLDivElement>(null);
+  useEffect(() => {
+    if (!playing) return;
+    let frame = 0;
+    const update = () => {
+      if (video.current && !document.hidden)
+        setSeconds(video.current.currentTime);
+      frame = requestAnimationFrame(update);
+    };
+    frame = requestAnimationFrame(update);
+    return () => cancelAnimationFrame(frame);
+  }, [playing]);
   const drag = useRef<{
     kind: string;
+    panelIndex?: number;
     x: number;
     y: number;
     ax: number;
@@ -62,6 +83,7 @@ export function CompositionPreview({
     end_ms: body.end_ms,
     aspect_ratio: body.aspect_ratio,
     render_config: body.render_config,
+    caption_config: { cues: body.caption_config.cues ?? null },
     overlay_config: {
       logo_asset_id: body.overlay_config.logo_asset_id ?? null,
     },
@@ -104,9 +126,8 @@ export function CompositionPreview({
     framing = body.render_config;
   const plan = data?.plan;
   const relative = Math.max(0, seconds - body.start_ms / 1000);
-  const key =
-    plan?.keyframes.filter((key) => key.time <= relative).at(-1) ??
-    plan?.keyframes[0];
+  const key = plan ? cropAtTime(plan.keyframes, relative) : undefined;
+  const split = !!plan?.scenes?.length || (!!plan?.panels?.length && plan.layout !== "single");
   const scale = width / 1080;
   const aspect = plan ? plan.output_width / plan.output_height : 9 / 16;
   const height = width / aspect;
@@ -142,14 +163,14 @@ export function CompositionPreview({
             : height - logoHeight - margin,
     ),
   );
-  const segments = caption.cues
+  const segments = data?.caption_segments ?? (caption.cues
     ? caption.cues.map((cue) => ({
         start: body.start_ms / 1000 + cue.start_ms / 1000,
         end: body.start_ms / 1000 + cue.end_ms / 1000,
         text: cue.text,
         words: [],
       }))
-    : (data?.segments ?? []);
+    : (data?.segments ?? []));
   const segment = segments.find(
     (segment) => seconds >= segment.start && seconds < segment.end,
   );
@@ -166,12 +187,12 @@ export function CompositionPreview({
       })) ?? []);
   const activeWord = Math.max(
     0,
-    words.findIndex((word) => word.end > seconds),
+    words.findLastIndex((word) => word.start <= seconds),
   );
   const wrappedLines = layoutCaptionWords(
     words.map((word) => word.text),
     safeCharacterLimit(caption),
-    caption,
+    caption.word_display === "single" ? { ...caption, max_words: 1 } : caption,
   );
   const activeLine = Math.max(
     0,
@@ -179,14 +200,17 @@ export function CompositionPreview({
       line.some((token) => token.wordIndex === activeWord),
     ),
   );
-  const linesPerGroup =
-    caption.animation === "word-pop" ? 1 : (caption.lines ?? 2);
+  const animation = normalizeCaptionAnimation(caption.animation);
+  const linesPerGroup = caption.word_display === "single" ? 1 : caption.lines ?? 2;
   const groupStart = Math.floor(activeLine / linesPerGroup) * linesPerGroup;
   const displayLines = wrappedLines.slice(
     groupStart,
     groupStart + linesPerGroup,
   );
-  const showingSample = !segment;
+  const groupFirst = words[displayLines[0]?.[0]?.wordIndex];
+  const groupLast = words[displayLines.at(-1)?.at(-1)?.wordIndex ?? -1];
+  const showingCaption = !!segment && !!groupFirst && !!groupLast &&
+    seconds >= groupFirst.start && seconds < groupLast.end;
   const safeBottom =
     safe === "TikTok"
       ? 0.25
@@ -202,12 +226,15 @@ export function CompositionPreview({
     (overlay.logo_enabled !== false &&
       !!data?.logo_url &&
       (logoY + logoHeight) / height > 1 - safeBottom);
-  function begin(event: PointerEvent, kind: string) {
+  function begin(event: PointerEvent, kind: string, panelIndex?: number) {
     event.preventDefault();
     event.stopPropagation();
     event.currentTarget.setPointerCapture(event.pointerId);
+    const panel = panelIndex != null ? plan?.panels?.[panelIndex] : undefined;
+    const crop = panel ? cropAtTime(panel.keyframes, relative) : key;
     drag.current = {
       kind,
+      panelIndex,
       x: event.clientX,
       y: event.clientY,
       ax:
@@ -215,16 +242,16 @@ export function CompositionPreview({
           ? (caption.x ?? 0.5)
           : kind === "logo"
             ? logoX / width
-            : plan && key
-              ? (key.x + plan.crop_width / 2) / plan.source_width
+            : plan && crop
+              ? (crop.x + (panel?.crop_width ?? plan.crop_width) / 2) / plan.source_width
               : 0.5,
       ay:
         kind === "caption"
           ? (caption.y ?? 0.78)
           : kind === "logo"
             ? logoY / height
-            : plan && key
-              ? (key.y + plan.crop_height / 2) / plan.source_height
+            : plan && crop
+              ? (crop.y + (panel?.crop_height ?? plan.crop_height) / 2) / plan.source_height
               : 0.5,
     };
   }
@@ -254,6 +281,18 @@ export function CompositionPreview({
         anchor_y: clamp(d.ay - (dy * plan.crop_height) / plan.source_height),
         lock_camera: true,
       });
+    if (d.kind === "panel" && plan && d.panelIndex != null) {
+      const panel = plan.panels?.[d.panelIndex];
+      if (!panel) return;
+      onFraming({
+        ...framing,
+        panels: panelsForLayout(framing).map((item, index) => index === d.panelIndex ? {
+          ...item,
+          anchor_x: clamp(d.ax - dx * plan.output_width / panel.width * panel.crop_width / plan.source_width),
+          anchor_y: clamp(d.ay - dy * plan.output_height / panel.height * panel.crop_height / plan.source_height),
+        } : item),
+      });
+    }
   }
   async function renderSample() {
     setRendering(true);
@@ -286,6 +325,106 @@ export function CompositionPreview({
       setRendering(false);
     }
   }
+  const previewTools = (
+    <>
+      <div
+        className="studio-preview-tool-section"
+        hidden={!!activeTool && activeTool !== "Transcript"}
+      >
+        {!segments.length && (
+          <p className="muted">Transcript seeking will appear when a transcript is available.</p>
+        )}
+        {!!segments.length && (
+          <details>
+            <summary>Transcript — click to seek</summary>
+            <div style={{ maxHeight: 220, overflow: "auto" }}>
+              {segments
+                .filter(
+                  (s) =>
+                    s.end > body.start_ms / 1000 && s.start < body.end_ms / 1000,
+                )
+                .map((s, i) => (
+                  <button
+                    type="button"
+                    key={i}
+                    className="text-button"
+                    style={{ display: "block", textAlign: "left", padding: 8 }}
+                    onClick={() => {
+                      const time = Math.max(body.start_ms / 1000, s.start);
+                      if (video.current) video.current.currentTime = time;
+                      setSeconds(time);
+                    }}
+                  >
+                    {s.start.toFixed(1)}s · {s.text}
+                  </button>
+                ))}
+            </div>
+          </details>
+        )}
+      </div>
+      <div
+        className="studio-preview-tool-section"
+        hidden={!!activeTool && activeTool !== "Reframe"}
+      >
+        <label className="field">
+          Platform safe zones
+          <select value={safe} onChange={(e) => setSafe(e.target.value)}>
+            {[
+              "Off",
+              "YouTube Shorts",
+              "TikTok",
+              "Instagram Reels",
+              "Facebook Reels",
+            ].map((name) => (
+              <option key={name}>{name}</option>
+            ))}
+          </select>
+        </label>
+        {warning && (
+          <p className="notice">
+            Captions or logo overlap the platform control area. Move them inward
+            before exporting.
+          </p>
+        )}
+        <details className="studio-framing-detail">
+          <summary>Framing quality and diagnostics</summary>
+          <p className="notice">
+            Framing score: {plan?.quality.score ?? "Not scored"}
+            {plan?.quality.reason ? ` — ${plan.quality.reason}` : ""}.{" "}
+            {plan?.warnings.join(" ")}
+          </p>
+          {data?.debug_allowed && (
+            <label className="check">
+              <input
+                type="checkbox"
+                checked={debug}
+                onChange={(e) => setDebug(e.target.checked)}
+              />
+              Developer framing overlay
+            </label>
+          )}
+        </details>
+      </div>
+      <div
+        className="studio-preview-tool-section"
+        hidden={!!activeTool && activeTool !== "Export"}
+      >
+        <button
+          className="button secondary"
+          type="button"
+          disabled={rendering || !data}
+          onClick={renderSample}
+        >
+          {rendering ? "Rendering sample…" : "Render 4-second preview"}
+        </button>
+        <p className="muted">
+          The short render uses your exact saved settings and counts toward render
+          usage. Browser animation and text wrapping are approximate; use this
+          sample to check the final appearance.
+        </p>
+      </div>
+    </>
+  );
   return (
     <section className="composition-editor">
       <div className="section-head">
@@ -296,17 +435,38 @@ export function CompositionPreview({
         <div
           className="composition-stage"
           ref={canvas}
-        tabIndex={0}
-        role="group"
-        aria-label="Video composition. Space to play or pause. Arrow keys to seek."
-        onKeyDown={(event) => {
-          if (!video.current) return;
-          if (event.key === " ") { event.preventDefault(); if (video.current.paused) void video.current.play().catch(() => setError("Playback could not start. Try again.")); else video.current.pause(); }
-          if (event.key === "ArrowLeft" || event.key === "ArrowRight") { event.preventDefault(); video.current.currentTime = Math.max(body.start_ms / 1000, Math.min(body.end_ms / 1000, video.current.currentTime + (event.key === "ArrowRight" ? 1 : -1))); }
-        }}
+          tabIndex={0}
+          role="group"
+          aria-label="Video composition. Space to play or pause. Arrow keys to seek."
+          onKeyDown={(event) => {
+            if (!video.current) return;
+            if (event.key === " ") {
+              event.preventDefault();
+              if (video.current.paused)
+                void video.current
+                  .play()
+                  .catch(() =>
+                    setError("Playback could not start. Try again."),
+                  );
+              else video.current.pause();
+            }
+            if (event.key === "ArrowLeft" || event.key === "ArrowRight") {
+              event.preventDefault();
+              video.current.currentTime = Math.max(
+                body.start_ms / 1000,
+                Math.min(
+                  body.end_ms / 1000,
+                  video.current.currentTime +
+                    (event.key === "ArrowRight" ? 1 : -1),
+                ),
+              );
+            }
+          }}
           style={{
             aspectRatio: aspect,
-            width: `min(100%, ${aspect * 420}px)`,
+            width: activeTool
+              ? `min(100%, ${aspect} * var(--studio-stage-height))`
+              : `min(100%, ${aspect * 420}px)`,
             height: "auto",
           }}
           onPointerMove={move}
@@ -343,19 +503,34 @@ export function CompositionPreview({
               }}
               style={{
                 position: "absolute",
+                opacity: split ? 0 : 1,
+                pointerEvents: split ? "none" : "auto",
                 maxWidth: "none",
                 width: `${(plan.source_width / plan.crop_width) * 100}%`,
                 height: `${(plan.source_height / plan.crop_height) * 100}%`,
                 left: `${(-key.x / plan.crop_width) * 100}%`,
                 top: `${(-key.y / plan.crop_height) * 100}%`,
               }}
-              onPointerDown={(e) => begin(e, "video")}
+              onPointerDown={framing.layout === "auto" ? undefined : (e) => begin(e, "video")}
               onError={() =>
                 setError(
                   "This source codec cannot play in this browser. Use the four-second render preview to check the composition.",
                 )
               }
             />
+          )}
+          {data && plan && split && (
+            <>
+              <SplitScreenVideo video={video} plan={plan} start={body.start_ms / 1000} />
+              {framing.layout !== "auto" && plan.panels?.map((panel, index) => (
+                <div key={index} className="split-panel-drag" role="group" aria-label={`Panel ${index + 1} crop`}
+                  onPointerDown={(event) => begin(event, "panel", index)}
+                  style={{ left: `${panel.x / plan.output_width * 100}%`, top: `${panel.y / plan.output_height * 100}%`,
+                    width: `${panel.width / plan.output_width * 100}%`, height: `${panel.height / plan.output_height * 100}%` }}>
+                  {(activeTool === "Reframe" || activeTool === "Captions") && <span>Panel {index + 1}</span>}
+                </div>
+              ))}
+            </>
           )}
           {safe !== "Off" && (
             <div
@@ -365,10 +540,10 @@ export function CompositionPreview({
               <small>{safe} safe area</small>
             </div>
           )}
-          {caption.enabled !== false && (
+          {caption.enabled !== false && showingCaption && (
             <div
-              className={`live-caption caption-${caption.animation ?? "none"}`}
-              key={`${groupStart}-${segment?.start ?? "sample"}-${caption.animation}`}
+              className="live-caption"
+              key={`${groupStart}-${segment?.start ?? "sample"}-${animation}`}
               onPointerDown={(e) => begin(e, "caption")}
               style={{
                 ...captionCSS(caption, scale),
@@ -379,28 +554,22 @@ export function CompositionPreview({
                 transform: `translate(${caption.alignment === "left" ? 0 : caption.alignment === "right" ? -100 : -50}%, -50%)`,
               }}
             >
-              {displayLines.map((line, lineIndex) => (
-                <span className="caption-live-line" key={lineIndex}>
-                  {line.map((token, tokenIndex) => (
-                    <span
-                      key={`${token.wordIndex}-${tokenIndex}`}
-                      style={{
-                        color:
-                          (caption.highlight ||
-                            caption.animation === "karaoke") &&
-                          words[token.wordIndex]?.start <= seconds &&
-                          words[token.wordIndex]?.end > seconds
-                            ? caption.highlight_color
-                            : undefined,
-                      }}
-                    >
-                      {token.separator}
-                      {token.text}
-                    </span>
-                  ))}
-                  {lineIndex < displayLines.length - 1 && <br />}
-                </span>
-              ))}
+              <CaptionText
+                lines={displayLines}
+                value={caption}
+                activeWord={activeWord}
+                words={words}
+                seconds={seconds}
+                elapsed={
+                  seconds -
+                  (words[displayLines[0]?.[0]?.wordIndex]?.start ?? seconds)
+                }
+                groupDuration={
+                  (words[displayLines.at(-1)?.at(-1)?.wordIndex ?? 0]?.end ??
+                    seconds + 1) -
+                  (words[displayLines[0]?.[0]?.wordIndex]?.start ?? seconds)
+                }
+              />
             </div>
           )}
           {data?.logo_url && overlay.logo_enabled !== false && (
@@ -439,6 +608,7 @@ export function CompositionPreview({
                     size: (caption.size ?? 54) * 1.15,
                     background: overlay.title_style === "Boxed",
                     weight: overlay.title_style === "Minimal" ? 400 : 700,
+                    italic: false,
                   },
                   scale,
                 ),
@@ -452,7 +622,7 @@ export function CompositionPreview({
               className="preview-watermark"
               style={{
                 ...captionCSS(
-                  { ...caption, size: (caption.size ?? 54) * 0.55 },
+                  { ...caption, size: (caption.size ?? 54) * 0.55, weight: 400, italic: false },
                   scale,
                 ),
                 opacity: 0.56,
@@ -479,7 +649,7 @@ export function CompositionPreview({
               {overlay.watermark}
             </div>
           )}
-          {debug && data?.debug_allowed && plan && key && (
+          {debug && !split && data?.debug_allowed && plan && key && (
             <svg
               className="crop-debug"
               viewBox={`0 0 ${plan.crop_width} ${plan.crop_height}`}
@@ -578,90 +748,15 @@ export function CompositionPreview({
         />
       </div>
       <p className="muted">
-        Drag the video to set a fixed manual crop. Drag captions or the logo to
+        {framing.layout === "auto" ? "People are framed automatically. " : split ? "Drag each panel to position its person. " : "Drag the video to set a fixed manual crop. "}Drag captions or the logo to
         reposition.{" "}
-        {showingSample
-          ? "Sample caption shown where no transcript is available."
-          : "Previewing transcript text."}
+        {showingCaption
+          ? "Captions follow speech and clear during pauses."
+          : "Captions are hidden when no speech is timed here."}
       </p>
-      {!!segments.length && (
-        <details>
-          <summary>Transcript — click to seek</summary>
-          <div style={{ maxHeight: 220, overflow: "auto" }}>
-            {segments
-              .filter(
-                (s) =>
-                  s.end > body.start_ms / 1000 && s.start < body.end_ms / 1000,
-              )
-              .map((s, i) => (
-                <button
-                  type="button"
-                  key={i}
-                  className="text-button"
-                  style={{ display: "block", textAlign: "left", padding: 8 }}
-                  onClick={() => {
-                    const time = Math.max(body.start_ms / 1000, s.start);
-                    if (video.current) video.current.currentTime = time;
-                    setSeconds(time);
-                  }}
-                >
-                  {s.start.toFixed(1)}s · {s.text}
-                </button>
-              ))}
-          </div>
-        </details>
-      )}
-      <label className="field">
-        Platform safe zones
-        <select value={safe} onChange={(e) => setSafe(e.target.value)}>
-          {[
-            "Off",
-            "YouTube Shorts",
-            "TikTok",
-            "Instagram Reels",
-            "Facebook Reels",
-          ].map((name) => (
-            <option key={name}>{name}</option>
-          ))}
-        </select>
-      </label>
-      {warning && (
-        <p className="notice">
-          Captions or logo overlap the platform control area. Move them inward
-          before exporting.
-        </p>
-      )}
-      <details className="studio-framing-detail">
-        <summary>Framing quality and diagnostics</summary>
-        <p className="notice">
-          Framing score: {plan?.quality.score ?? "Not scored"}
-          {plan?.quality.reason ? ` — ${plan.quality.reason}` : ""}.{" "}
-          {plan?.warnings.join(" ")}
-        </p>
-        {data?.debug_allowed && (
-          <label className="check">
-            <input
-              type="checkbox"
-              checked={debug}
-              onChange={(e) => setDebug(e.target.checked)}
-            />
-            Developer framing overlay
-          </label>
-        )}
-      </details>
-      <button
-        className="button secondary"
-        type="button"
-        disabled={rendering || !data}
-        onClick={renderSample}
-      >
-        {rendering ? "Rendering sample…" : "Render 4-second preview"}
-      </button>
-      <p className="muted">
-        The short render uses your exact saved settings and counts toward render
-        usage. Browser animation and text wrapping are approximate; use this
-        sample to check the final appearance.
-      </p>
+      {controlsContainer
+        ? createPortal(previewTools, controlsContainer)
+        : !activeTool && previewTools}
       {rendered && (
         <video
           aria-label="Rendered style preview"
@@ -684,13 +779,14 @@ export function FramingControls({
   value: FramingStyle;
   onChange: (value: FramingStyle) => void;
 }) {
+  const split = !!value.layout && value.layout !== "single";
   return (
     <div className="studio-framing-controls">
       <h3>Keep the focus</h3>
       <p className="muted">
         Stable framing keeps your subject centered within each shot.
       </p>
-      <label className="field">
+      {!split && <label className="field">
         Framing subject
         <select
           value={value.subject ?? "primary"}
@@ -708,7 +804,7 @@ export function FramingControls({
           <option value="right">Right person</option>
           <option value="two-person">Two people when they fit</option>
         </select>
-      </label>
+      </label>}
       <Toggle
         label="Lock camera within each source shot"
         checked={value.lock_camera ?? true}
@@ -720,7 +816,7 @@ export function FramingControls({
           })
         }
       />
-      <Toggle
+      {!split && <Toggle
         label="Set a manual crop anchor"
         checked={value.anchor_x != null}
         onChange={(manual) =>
@@ -730,8 +826,8 @@ export function FramingControls({
             anchor_y: manual ? 0.5 : null,
           })
         }
-      />
-      {value.anchor_x != null && (
+      />}
+      {!split && value.anchor_x != null && (
         <div className="form-grid">
           {(
             [
@@ -759,7 +855,7 @@ export function FramingControls({
           ))}
         </div>
       )}
-      <label className="field studio-range">
+      {!split && <label className="field studio-range">
         <span>
           Crop zoom<output>{(value.zoom ?? 1).toFixed(2)}x</output>
         </span>
@@ -774,7 +870,7 @@ export function FramingControls({
             onChange({ ...value, zoom: Number(event.target.value) })
           }
         />
-      </label>
+      </label>}
       <details>
         <summary>Advanced framing</summary>
         <div className="form-grid">
@@ -828,7 +924,9 @@ export function FramingControls({
       <button
         className="button secondary"
         type="button"
-        onClick={() => onChange({ ...value, anchor_x: null, anchor_y: null })}
+        onClick={() => onChange({ ...value, anchor_x: null, anchor_y: null,
+          ...(value.layout === "auto" ? { panels: [] } : split ? { panels: panelsForLayout(value).map((panel) => ({ ...panel, anchor_x: null, anchor_y: null })) } : {}),
+        })}
       >
         Reset to automatic framing
       </button>

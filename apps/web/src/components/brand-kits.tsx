@@ -10,9 +10,9 @@ import { PositionGrid } from "./studio-controls";
 import "./studio.css";
 import { useRouter } from "next/navigation";
 import { api } from "@/lib/api";
-import { CAPTION_FONTS } from "@/lib/editor-types";
 import platforms from "../../../../packages/shared/platforms.json";
-import { CaptionStudio, captionCSS } from "./caption-studio";
+import { captionCSS } from "@/lib/caption-style";
+import { CaptionStudio } from "./basic-caption-studio";
 
 export type BrandConfig = {
   id?: string;
@@ -45,15 +45,6 @@ export type BrandKit = {
   config: BrandConfig;
   has_logo: boolean;
 };
-const styles = [
-  "Clean",
-  "Bold",
-  "Minimal",
-  "Karaoke",
-  "Creator",
-  "Podcast",
-  "High Contrast",
-];
 const ratios = ["9:16", "16:9", "1:1", "4:5", "3:4", "4:3", "21:9", "Original"];
 const defaults: BrandConfig = {
   captions: {
@@ -401,138 +392,17 @@ export function BrandKits({ initial }: { initial: BrandKit[] }) {
               )}
               {step === 1 && (
                 <fieldset disabled={busy}>
-                  <legend>Caption appearance</legend>
-                  <details>
-                    <summary>Caption templates and customization</summary>
-                    <CaptionStudio
-                      value={config.captions}
-                      onChange={(next) =>
-                        setConfig({
-                          ...config,
-                          captions: { ...config.captions, ...next },
-                        })
-                      }
-                    />
-                  </details>
-                  <div className="form-grid">
-                    <label className="field">
-                      Caption style
-                      <select
-                        value={config.captions.style}
-                        onChange={(e) =>
-                          setConfig({
-                            ...config,
-                            captions: {
-                              ...config.captions,
-                              style: e.target.value,
-                            },
-                          })
-                        }
-                      >
-                        {styles.map((style) => (
-                          <option key={style}>{style}</option>
-                        ))}
-                      </select>
-                    </label>
-                    <label className="field">
-                      Default font
-                      <select
-                        value={config.captions.font}
-                        onChange={(e) =>
-                          setConfig({
-                            ...config,
-                            captions: {
-                              ...config.captions,
-                              font: e.target.value,
-                            },
-                          })
-                        }
-                      >
-                        {CAPTION_FONTS.map((font) => (
-                          <option key={font}>{font}</option>
-                        ))}
-                      </select>
-                    </label>
-                    <label className="field">
-                      Caption size
-                      <input
-                        type="number"
-                        min={20}
-                        max={120}
-                        value={config.captions.size}
-                        onChange={(e) =>
-                          setConfig({
-                            ...config,
-                            captions: {
-                              ...config.captions,
-                              size: Number(e.target.value),
-                            },
-                          })
-                        }
-                      />
-                    </label>
-                    <label className="field">
-                      Primary color
-                      <input
-                        type="color"
-                        value={config.captions.primary_color}
-                        onChange={(e) =>
-                          setConfig({
-                            ...config,
-                            captions: {
-                              ...config.captions,
-                              primary_color: e.target.value,
-                            },
-                          })
-                        }
-                      />
-                    </label>
-                    <label className="field">
-                      Secondary color
-                      <input
-                        type="color"
-                        value={config.captions.highlight_color}
-                        onChange={(e) =>
-                          setConfig({
-                            ...config,
-                            captions: {
-                              ...config.captions,
-                              highlight_color: e.target.value,
-                            },
-                          })
-                        }
-                      />
-                    </label>
-                  </div>
-                  <label className="check">
-                    <input
-                      type="checkbox"
-                      checked={config.captions.enabled}
-                      onChange={(e) =>
-                        setConfig({
-                          ...config,
-                          captions: {
-                            ...config.captions,
-                            enabled: e.target.checked,
-                          },
-                        })
-                      }
-                    />
-                    Enable captions by default
-                  </label>
-                  <p
-                    className="notice"
-                    style={{
-                      background: "#20232b",
-                      color: config.captions.primary_color,
-                      fontWeight: 700,
-                    }}
-                  >
-                    Your story,{" "}
-                    <span style={{ color: config.captions.highlight_color }}>
-                      your colors.
-                    </span>
-                  </p>
+                  <legend>Subtitles</legend>
+                  <CaptionStudio
+                    compact
+                    value={config.captions}
+                    onChange={(next) =>
+                      setConfig({
+                        ...config,
+                        captions: { ...config.captions, ...next },
+                      })
+                    }
+                  />
                 </fieldset>
               )}
               {step === 2 && (

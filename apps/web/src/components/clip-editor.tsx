@@ -1,10 +1,13 @@
 "use client";
 import { useEffect, useEffectEvent, useRef, useState } from "react";
 import Link from "next/link";
-import { Check } from "lucide-react";
+import {
+  Captions, Check, Crop, Download, FileText, Palette, Scissors, Type,
+} from "lucide-react";
 import { api } from "@/lib/api";
+import { automaticFraming } from "@/lib/split-screen";
 import type { Clip } from "./clips-panel";
-import { CaptionStudio } from "./caption-studio";
+import { CaptionStudio } from "./basic-caption-studio";
 import { CompositionPreview, FramingControls } from "./composition-preview";
 import { ConfirmDialog, Modal, Toggle } from "./ui/primitives";
 import { useToast } from "./ui/toast";
@@ -12,6 +15,45 @@ import { PositionGrid, timecode } from "./studio-controls";
 import "./studio.css";
 type Cue = { start_ms: number; end_ms: number; text: string };
 const ratios = ["9:16", "16:9", "1:1", "4:5", "3:4", "4:3", "21:9", "Original"];
+const editorTools = [
+  {
+    name: "Captions",
+    icon: Captions,
+    description: "Style your subtitles, animation, and placement.",
+  },
+  {
+    name: "Transcript",
+    icon: FileText,
+    description: "Read along, jump to a moment, and edit caption text.",
+  },
+  {
+    name: "Timing",
+    icon: Scissors,
+    description: "Name your clip and choose its start and end.",
+  },
+  {
+    name: "Reframe",
+    icon: Crop,
+    description: "Set the aspect ratio, frame your subjects, and choose platform guides.",
+  },
+  {
+    name: "Text",
+    icon: Type,
+    description: "Add an opening title and choose its style.",
+  },
+  {
+    name: "Brand",
+    icon: Palette,
+    description: "Place your logo and watermark.",
+  },
+  {
+    name: "Export",
+    icon: Download,
+    description: "Review output settings and render a short sample.",
+  },
+] as const;
+type EditorTool = (typeof editorTools)[number]["name"];
+
 export function EditorDialog({
   clip,
   projectId,
@@ -70,15 +112,18 @@ function ClipEditor({
   onSaved: () => void;
   onDirty: (dirty: boolean) => void;
 }) {
-  const [value, setValue] = useState(clip);
+  const [value, setValue] = useState(() => ({ ...clip, render_config: automaticFraming(clip.render_config) }));
+  const [initialValue] = useState(value);
   const [cues, setCues] = useState<Cue[] | null>(null);
   const [busy, setBusy] = useState(false);
   const [loadingCues, setLoadingCues] = useState(false);
   const [error, setError] = useState("");
-  const [panel, setPanel] = useState("Captions");
+  const [panel, setPanel] = useState<EditorTool>("Captions");
+  const [previewControls, setPreviewControls] = useState<HTMLDivElement | null>(null);
+  const activeTool = editorTools.find((tool) => tool.name === panel)!;
   const { toast } = useToast();
   const form = useRef<HTMLFormElement>(null);
-  const dirty = JSON.stringify(value) !== JSON.stringify(clip) || cues !== null;
+  const dirty = JSON.stringify(value) !== JSON.stringify(initialValue) || cues !== null;
   useEffect(() => {
     onDirty(dirty);
   }, [dirty, onDirty]);
@@ -187,43 +232,30 @@ function ClipEditor({
         </span>
       </div>
       <div className="studio-editor-layout">
-        <div className="studio-editor-canvas">
-          <CompositionPreview
-            projectId={projectId}
-            body={{
-              ...value,
-              caption_config: {
-                ...value.caption_config,
-                ...(cues !== null ? { cues } : {}),
-              },
-            }}
-            onCaption={(caption_config) =>
-              setValue({ ...value, caption_config })
-            }
-            onOverlay={(overlay_config) =>
-              setValue({ ...value, overlay_config })
-            }
-            onFraming={(render_config) => setValue({ ...value, render_config })}
-          />
-        </div>
-        <aside className="studio-inspector">
-          <div
-            className="studio-panel-tabs"
-            role="group"
-            aria-label="Editor tools"
-          >
-            {["Captions", "Timing", "Reframe", "Brand", "Export"].map((tab) => (
-              <button
-                type="button"
-                key={tab}
-                aria-pressed={panel === tab}
-                onClick={() => setPanel(tab)}
-              >
-                {tab}
-              </button>
-            ))}
+        <nav className="studio-tool-rail" aria-label="Editor tools">
+          {editorTools.map(({ name, icon: Icon }) => (
+            <button
+              type="button"
+              key={name}
+              aria-pressed={panel === name}
+              aria-controls="clip-tool-panel"
+              onClick={() => setPanel(name)}
+            >
+              <Icon size={20} aria-hidden="true" />
+              <span>{name}</span>
+            </button>
+          ))}
+        </nav>
+        <aside className="studio-inspector" aria-label={`${panel} settings`}>
+          <div className="studio-inspector-heading">
+            <h3 id="clip-tool-heading">{panel}</h3>
+            <p>{activeTool.description}</p>
           </div>
-          <div className="studio-inspector-body">
+          <div
+            className="studio-inspector-body"
+            id="clip-tool-panel"
+            aria-labelledby="clip-tool-heading"
+          >
             {panel === "Captions" && (
               <>
                 <Toggle
@@ -242,7 +274,18 @@ function ClipEditor({
                   onChange={(caption_config) =>
                     setValue({ ...value, caption_config })
                   }
+                  framing={value.render_config}
+                  onFramingChange={(render_config) =>
+                    setValue({ ...value, render_config })
+                  }
                 />
+              </>
+            )}
+            {panel === "Transcript" && (
+              <>
+                {!clip.id && (
+                  <p className="notice">Save this clip to edit its caption text.</p>
+                )}
                 {clip.id && (
                   <button
                     className="button secondary"
@@ -325,19 +368,10 @@ function ClipEditor({
                     </label>
                   ))}
                 </div>
-                <label className="field">
-                  Aspect ratio
-                  <select
-                    value={value.aspect_ratio}
-                    onChange={(event) =>
-                      setValue({ ...value, aspect_ratio: event.target.value })
-                    }
-                  >
-                    {ratios.map((ratio) => (
-                      <option key={ratio}>{ratio}</option>
-                    ))}
-                  </select>
-                </label>
+              </>
+            )}
+            {panel === "Text" && (
+              <>
                 <label className="field">
                   Opening title overlay
                   <input
@@ -376,12 +410,27 @@ function ClipEditor({
               </>
             )}
             {panel === "Reframe" && (
-              <FramingControls
-                value={value.render_config}
-                onChange={(render_config) =>
-                  setValue({ ...value, render_config })
-                }
-              />
+              <>
+                <label className="field">
+                  Aspect ratio
+                  <select
+                    value={value.aspect_ratio}
+                    onChange={(event) =>
+                      setValue({ ...value, aspect_ratio: event.target.value })
+                    }
+                  >
+                    {ratios.map((ratio) => (
+                      <option key={ratio}>{ratio}</option>
+                    ))}
+                  </select>
+                </label>
+                <FramingControls
+                  value={value.render_config}
+                  onChange={(render_config) =>
+                    setValue({ ...value, render_config })
+                  }
+                />
+              </>
             )}
             {panel === "Brand" && (
               <>
@@ -530,8 +579,34 @@ function ClipEditor({
                 </p>
               </>
             )}
+            <div
+              ref={setPreviewControls}
+              className="studio-preview-tools"
+              hidden={!["Transcript", "Reframe", "Export"].includes(panel)}
+            />
           </div>
         </aside>
+        <div className="studio-editor-canvas" role="region" aria-label="Clip preview">
+          <CompositionPreview
+            projectId={projectId}
+            controlsContainer={previewControls}
+            activeTool={panel}
+            body={{
+              ...value,
+              caption_config: {
+                ...value.caption_config,
+                ...(cues !== null ? { cues } : {}),
+              },
+            }}
+            onCaption={(caption_config) =>
+              setValue({ ...value, caption_config })
+            }
+            onOverlay={(overlay_config) =>
+              setValue({ ...value, overlay_config })
+            }
+            onFraming={(render_config) => setValue({ ...value, render_config })}
+          />
+        </div>
       </div>
       <div className="studio-editor-footer">
         <button className="text-button" type="button" onClick={onClose}>
@@ -560,4 +635,3 @@ function ClipEditor({
     </form>
   );
 }
-

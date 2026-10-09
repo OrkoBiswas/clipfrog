@@ -41,12 +41,35 @@ test("workspace routes, themes, responsive layouts and keyboard navigation", asy
   await page.setViewportSize({ width: 1440, height: 1000 });
   await page.goto("/dashboard");
   await expect(
-    page.getByRole("heading", { name: "Your workspace" }),
+    page.getByRole("heading", { name: "Welcome back, Alex." }),
   ).toBeVisible();
   await page.screenshot({
     path: path.resolve("../../.local/redesign-dashboard-dark.png"),
     fullPage: true,
   });
+  for (const ratio of ["1:1", "16:9", "9:16"]) {
+    const option = page
+      .getByRole("group", { name: "Preview aspect ratio" })
+      .getByRole("button", { name: ratio, exact: true });
+    await option.click();
+    await expect(option).toHaveAttribute("aria-pressed", "true");
+  }
+  await page.getByRole("button", { name: "Show sample captions" }).click();
+  await expect(page.locator(".showcase-caption")).toHaveCount(0);
+  await page.getByRole("button", { name: "Show sample captions" }).click();
+  await expect(page.locator(".showcase-caption")).toBeVisible();
+  await page.getByRole("button", { name: "Grid view", exact: true }).click();
+  for (const width of [375, 768, 1201, 1280, 1440]) {
+    await page.setViewportSize({ width, height: 960 });
+    expect(
+      await page.evaluate(
+        () => document.documentElement.scrollWidth <= innerWidth + 1,
+      ),
+      `Dashboard grid at ${width}px`,
+    ).toBe(true);
+  }
+  await page.setViewportSize({ width: 1440, height: 1000 });
+  await page.getByRole("button", { name: "List view", exact: true }).click();
   await page.getByRole("button", { name: "Collapse sidebar" }).click();
   await page.reload();
   await expect(
@@ -59,12 +82,9 @@ test("workspace routes, themes, responsive layouts and keyboard navigation", asy
   ).toBeVisible();
   await page
     .getByRole("combobox", { name: "Search projects and pages" })
-    .fill("tmplt");
+    .fill("settings");
   await page.keyboard.press("Enter");
-  await expect(page).toHaveURL(/\/templates$/);
-  await expect(
-    page.getByRole("button", { name: "Apply Creator Impact" }),
-  ).toBeVisible();
+  await expect(page).toHaveURL(/\/settings$/);
   await page
     .getByRole("button", { name: "Search workspace", exact: true })
     .click();
@@ -83,12 +103,38 @@ test("workspace routes, themes, responsive layouts and keyboard navigation", asy
     "/projects/new",
     `/projects/${projectId}`,
     "/clips",
-    "/templates",
     "/brand-kit",
     "/usage",
     "/billing",
     "/settings",
   ];
+  await page.goto(`/projects/${projectId}#clips`);
+  await expect(
+    page.getByRole("tab", { name: "Clips", exact: true }),
+  ).toHaveAttribute("aria-selected", "true");
+  await page.getByRole("tab", { name: "Brand", exact: true }).click();
+  await expect(page).toHaveURL(/#brand$/);
+  await page.goBack();
+  await expect(
+    page.getByRole("tab", { name: "Clips", exact: true }),
+  ).toHaveAttribute("aria-selected", "true");
+  await page.getByRole("button", { name: /01 Upload/ }).click();
+  await expect(page.locator("#source")).toBeFocused();
+  await expect(
+    page.getByRole("tab", { name: "Overview", exact: true }),
+  ).toHaveAttribute("aria-selected", "true");
+  await expect(page.getByRole("heading", { name: "Step 1: Upload your video", exact: true })).toBeVisible();
+  await expect(page.getByRole("button", { name: "Analyze video", exact: true })).toBeDisabled();
+  await expect(page.getByRole("button", { name: "Find highlights", exact: true })).toBeDisabled();
+  await expect(page.getByText("Complete video analysis in step 2 to unlock highlight search.")).toBeVisible();
+  await page.screenshot({
+    path: path.resolve("../../.local/redesign-project.png"),
+    fullPage: true,
+  });
+  await page.goto(`/projects/${projectId}?tab=clips`);
+  await expect(
+    page.getByRole("tab", { name: "Clips", exact: true }),
+  ).toHaveAttribute("aria-selected", "true");
   for (const theme of ["light", "dark"] as const) {
     await page.evaluate((value) => {
       localStorage.setItem("clipforge-theme", value);
@@ -117,6 +163,11 @@ test("workspace routes, themes, responsive layouts and keyboard navigation", asy
   }
   await page.setViewportSize({ width: 375, height: 812 });
   await page.goto("/dashboard");
+  await expect(
+    page.getByRole("heading", { name: "Welcome back, Alex." }),
+  ).toBeVisible();
+  await page.evaluate(() => document.fonts.ready);
+  await expect(page.locator(".creator-hero:visible")).toHaveCSS("opacity", "1");
   await page.screenshot({
     path: path.resolve("../../.local/redesign-dashboard-mobile.png"),
     fullPage: true,
@@ -124,8 +175,8 @@ test("workspace routes, themes, responsive layouts and keyboard navigation", asy
   await page.getByRole("button", { name: "Open navigation" }).click();
   const drawer = page.getByRole("dialog", { name: "ClipForge", exact: true });
   await expect(drawer).toBeVisible();
-  await drawer.getByRole("link", { name: "Templates", exact: true }).click();
-  await expect(page).toHaveURL(/\/templates$/);
+  await expect(drawer.getByRole("link", { name: "Templates", exact: true })).toBeVisible();
+  await page.keyboard.press("Escape");
   await expect(drawer).not.toBeVisible();
   await page.emulateMedia({ reducedMotion: "reduce" });
   await page.goto("/projects/new");
@@ -160,6 +211,24 @@ test("all authentication screens remain responsive", async ({ page }) => {
         ),
         `${route} at ${width}px`,
       ).toBe(true);
+    }
+    if (route === "/login") {
+      await page.evaluate(() => document.fonts.ready);
+      await page.evaluate(() =>
+        Promise.all(
+          document
+            .getAnimations()
+            .filter(
+              (animation) =>
+                animation.effect?.getTiming().iterations !== Infinity,
+            )
+            .map((animation) => animation.finished),
+        ),
+      );
+      await page.screenshot({
+        path: path.resolve("../../.local/redesign-login.png"),
+        fullPage: true,
+      });
     }
   }
 });

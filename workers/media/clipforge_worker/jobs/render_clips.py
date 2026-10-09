@@ -15,6 +15,7 @@ from clipforge_api.models import (
     Scene,
     Transcript,
 )
+from clipforge_api.services.collage import collage_faces
 from clipforge_api.services.usage import storage_check
 from clipforge_api.storage import s3
 from sqlalchemy import select
@@ -22,10 +23,10 @@ from sqlalchemy import select
 from clipforge_worker.celery_app import celery
 from clipforge_worker.jobs.runtime import run_job, succeed
 from clipforge_worker.media.probe import probe
-from clipforge_worker.reframing.planner import plan_crop
+from clipforge_worker.reframing.planner import plan_composition
 from clipforge_worker.rendering.renderer import render
 from clipforge_worker.transcription.base import Segment
-from clipforge_worker.vision.face_detector import FaceFrame
+from clipforge_worker.vision.face_detector import COLLAGE_DETECTOR_VERSION, FaceFrame
 
 
 @celery.task(name="clipforge.render", soft_time_limit=14400, time_limit=14500)
@@ -62,45 +63,64 @@ def render_clips(job_id: str) -> None:
                 with SessionLocal() as db:
                     clip = db.get(Clip, clip_id)
                     assert clip and clip.project_id == project_id
-                    if clip.rendered_revision == clip.revision and clip.output_asset_id:
+                    config = RenderConfig.model_validate(clip.render_config)
+                    if (
+                        clip.rendered_revision == clip.revision
+                        and clip.output_asset_id
+                        and (
+                            config.layout != "auto"
+                            or (clip.crop_plan or {}).get("quality", {}).get("collage_detector")
+                            == COLLAGE_DETECTOR_VERSION
+                        )
+                    ):
                         continue
                     revision = clip.revision
-                    config = RenderConfig.model_validate(clip.render_config)
                     caption = CaptionConfig.model_validate(clip.caption_config)
                     overlay = OverlayConfig.model_validate(clip.overlay_config)
                     start, end = clip.start_ms / 1000, clip.end_ms / 1000
                     if end > info.duration_ms / 1000 + 0.1:
                         raise ValueError("Clip ends beyond the source duration.")
+                    clip_faces = faces
+                    if config.layout == "auto":
+                        stage = f"Detecting people for clip {index + 1} of {len(clip_ids)}"
+                        percent = 5 + round(index / len(clip_ids) * 90)
+                        context.progress(stage, percent)
+
+                        def detect_progress(
+                            value: float, stage: str = stage, percent: int = percent
+                        ) -> None:
+                            context.progress(stage, percent)
+
+                        clip_faces = collage_faces(
+                            db,
+                            project_id,
+                            source,
+                            start,
+                            end,
+                            detect_progress,
+                        )
                     anchor = (
                         (config.anchor_x, config.anchor_y)
                         if config.anchor_x is not None and config.anchor_y is not None
                         else None
                     )
-                    plan = plan_crop(
+                    plan = plan_composition(
                         info.width,
                         info.height,
                         clip.aspect_ratio,
                         start,
                         end,
-                        faces,
+                        clip_faces,
                         cuts,
-                        config.crop_mode,
-                        anchor,
-                        config.zoom,
-                        eye_line=config.eye_line,
-                        headroom=config.headroom,
-                        subject=config.subject,
-                        lock_camera=config.lock_camera,
-                        minimum_hold=config.minimum_crop_hold_seconds,
-                        horizontal_dead_zone=config.horizontal_dead_zone,
-                        vertical_dead_zone=config.vertical_dead_zone,
+                        config=config,
                         sentence_boundaries=[s.end for s in segments],
                     )
                     clip.status = "RENDERING"
                     clip.crop_plan = plan.model_dump()
                     db.commit()
                     if (
-                        anchor is None
+                        config.layout != "auto"
+                        and (config.layout != "single" or anchor is None)
                         and plan.quality.get("validated")
                         and (
                             plan.quality["score"] < config.minimum_framing_score

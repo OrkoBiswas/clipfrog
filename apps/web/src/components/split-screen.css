@@ -1,0 +1,16 @@
+.split-screen-controls { display: grid; gap: 14px; }
+.split-layout-picker { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 8px; }
+.split-layout-picker button { display: flex; align-items: center; gap: 8px; min-height: 52px; border: 1px solid var(--border-default); border-radius: 10px; background: var(--bg-surface); color: inherit; padding: 9px; font-size: 12px; text-align: left; cursor: pointer; }
+.split-layout-picker button[aria-pressed="true"] { border-color: var(--text-accent); background: var(--brand-soft); }
+.split-layout-picker button:focus-visible { outline: 2px solid var(--text-accent); outline-offset: 2px; }
+.split-layout-icon { display: grid; width: 24px; height: 28px; gap: 2px; flex-shrink: 0; }
+.split-layout-icon > span { background: currentColor; opacity: .65; border-radius: 2px; }
+.split-layout-stacked { grid-template-rows: repeat(2, 1fr); }
+.split-layout-side-by-side { grid-template-columns: repeat(2, 1fr); }
+.split-layout-grid { grid-template-columns: repeat(2, 1fr); grid-template-rows: repeat(2, 1fr); }
+.split-panel-settings { display: grid; gap: 12px; min-width: 0; border: 1px solid var(--border-default); border-radius: 10px; padding: 12px; margin: 0; }
+.split-panel-settings legend { padding: 0 6px; font-size: 12px; font-weight: 700; }
+.split-video-canvas { position: absolute; inset: 0; width: 100%; height: 100%; pointer-events: none; }
+.split-panel-drag { position: absolute; touch-action: none; cursor: move; }
+.split-panel-drag:hover { box-shadow: inset 0 0 0 2px #ffffff80; }
+.split-panel-drag > span { position: absolute; top: 8px; left: 8px; border-radius: 5px; padding: 3px 6px; font: 11px sans-serif; color: #fff; background: #0009; pointer-events: none; }

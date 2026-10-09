@@ -175,10 +175,25 @@ class ClipCandidate(Identity, Base):
     transcript_text: Mapped[str]
     score_total: Mapped[float]
     score_breakdown: Mapped[dict[str, float]] = mapped_column(json_type)
+    scoring_metadata: Mapped[dict[str, Any]] = mapped_column(json_type, default=dict)
     reason: Mapped[str]
     title: Mapped[str] = mapped_column(String(120))
     selected: Mapped[bool] = mapped_column(default=False)
     rank: Mapped[int | None]
+
+
+class HighlightFeedback(Identity, Base):
+    __tablename__ = "highlight_feedback"
+    __table_args__ = (UniqueConstraint("user_id", "project_id", "fingerprint"),)
+    user_id: Mapped[uuid.UUID] = mapped_column(ForeignKey("users.id", ondelete="CASCADE"), index=True)
+    project_id: Mapped[uuid.UUID] = mapped_column(ForeignKey("projects.id", ondelete="CASCADE"), index=True)
+    fingerprint: Mapped[str] = mapped_column(String(64))
+    start_ms: Mapped[int]
+    end_ms: Mapped[int]
+    rating: Mapped[str] = mapped_column(String(10))
+    features: Mapped[dict[str, float]] = mapped_column(json_type)
+    engine_version: Mapped[str] = mapped_column(String(50))
+    updated_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), default=now, onupdate=now)
 
 
 class Clip(Identity, Base):

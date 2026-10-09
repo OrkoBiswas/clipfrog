@@ -1,9 +1,81 @@
 import uuid
 from typing import Literal
 
-from pydantic import BaseModel, ConfigDict, Field, model_validator
+from pydantic import BaseModel, ConfigDict, Field, field_validator, model_validator
+
+from clipforge_api.caption_fonts import CaptionWeight, caption_family, caption_variant
 
 Ratio = Literal["9:16", "16:9", "1:1", "4:5", "3:4", "4:3", "21:9", "Original"]
+CaptionAnimation = Literal[
+    "none",
+    "word-pop",
+    "fade",
+    "rise",
+    "fall",
+    "slide-left",
+    "slide-right",
+    "zoom-in",
+    "zoom-out",
+    "bounce",
+    "blur-in",
+    "tilt",
+    "unfold",
+    "stretch",
+    "wipe",
+    "lift-mask",
+    "typewriter",
+    "color-reveal",
+    "word-reveal",
+    "karaoke",
+    "spotlight",
+    "stamp",
+    "word-spring",
+    "word-rise",
+    "word-punch",
+    "word-slide",
+    "word-tilt",
+    "word-focus",
+    "word-flip",
+    "word-stretch",
+    "word-pill",
+    "word-box",
+    "word-underline",
+    "word-glow",
+]
+BASIC_CAPTION_SETTINGS = {
+    "style": "Clean",
+    "font": "DejaVu Sans",
+    "size": 54,
+    "max_words": 5,
+    "max_chars_per_line": 24,
+    "lines": 2,
+    "position": "bottom",
+    "uppercase": False,
+    "punctuation": True,
+    "remove_special_characters": False,
+    "outline": 3,
+    "shadow": 1,
+    "shadow_color": "#000000",
+    "shadow_opacity": 0.6,
+    "background": False,
+    "highlight": False,
+    "primary_color": "#FFFFFF",
+    "highlight_color": "#FFD700",
+    "weight": 700,
+    "font_width": 100,
+    "spacing": 0,
+    "stroke_color": "#141414",
+    "background_color": "#000000",
+    "background_opacity": 0.65,
+    "animation": "word-pop",
+    "animation_duration": 0.6,
+    "effect_color": "#0054FF",
+    "x": 0.5,
+    "y": 0.78,
+    "width": 0.84,
+    "alignment": "center",
+    "safe_bottom": 0.17,
+}
 
 
 class CaptionCue(BaseModel):
@@ -20,20 +92,9 @@ class CaptionCue(BaseModel):
 
 class CaptionConfig(BaseModel):
     model_config = ConfigDict(allow_inf_nan=False)
-    template_id: str | None = Field(default=None, max_length=100)
     enabled: bool = True
-    style: Literal["Clean", "Bold", "Minimal", "Karaoke", "Creator", "Podcast", "High Contrast"] = (
-        "Clean"
-    )
-    font: Literal[
-        "DejaVu Sans",
-        "Noto Sans",
-        "Bebas Neue",
-        "Lato",
-        "Montserrat",
-        "Open Sans",
-        "Roboto",
-    ] = "DejaVu Sans"
+    style: str = Field(default="Clean", max_length=80)
+    font: str = Field(default="DejaVu Sans", min_length=1, max_length=80)
     size: int = Field(default=54, ge=20, le=120)
     max_words: int = Field(default=5, ge=1, le=12)
     max_chars_per_line: int = Field(default=24, ge=1, le=80)
@@ -44,24 +105,67 @@ class CaptionConfig(BaseModel):
     remove_special_characters: bool = False
     outline: int = Field(default=3, ge=0, le=8)
     shadow: int = Field(default=1, ge=0, le=5)
+    shadow_color: str = Field(default="#000000", pattern=r"^#[0-9a-fA-F]{6}$")
+    shadow_opacity: float = Field(default=0.6, ge=0, le=1)
     background: bool = False
     highlight: bool = False
     cues: list[CaptionCue] | None = Field(default=None, max_length=500)
     primary_color: str = Field(default="#FFFFFF", pattern=r"^#[0-9a-fA-F]{6}$")
     highlight_color: str = Field(default="#FFD700", pattern=r"^#[0-9a-fA-F]{6}$")
-    weight: Literal[400, 700] = 700
+    weight: CaptionWeight = 700
+    italic: bool = False
+    font_width: float = Field(default=100, ge=75, le=150)
     spacing: float = Field(default=0, ge=0, le=12)
     stroke_color: str = Field(default="#141414", pattern=r"^#[0-9a-fA-F]{6}$")
     background_color: str = Field(default="#000000", pattern=r"^#[0-9a-fA-F]{6}$")
     background_opacity: float = Field(default=0.65, ge=0, le=1)
-    animation: Literal["none", "fade", "pop", "scale", "bounce", "slide", "word-pop", "karaoke"] = (
-        "none"
-    )
+    animation: CaptionAnimation = "word-pop"
+    animation_duration: float = Field(default=0.6, ge=0.1, le=2)
+    effect_color: str = Field(default="#0054FF", pattern=r"^#[0-9a-fA-F]{6}$")
+    word_display: Literal["full", "build", "single"] = "full"
+    active_scale: float = Field(default=1.06, ge=1, le=1.4)
+    inactive_opacity: float = Field(default=1, ge=0.1, le=1)
     x: float = Field(default=0.5, ge=0.05, le=0.95)
     y: float = Field(default=0.78, ge=0.05, le=0.95)
     width: float = Field(default=0.84, ge=0.2, le=0.94)
     alignment: Literal["left", "center", "right"] = "center"
     safe_bottom: float = Field(default=0.17, ge=0.02, le=0.35)
+
+    @field_validator("font")
+    @classmethod
+    def supported_font(cls, value: str) -> str:
+        caption_family(value)
+        return value
+
+    @model_validator(mode="after")
+    def supported_font_variant(self) -> "CaptionConfig":
+        # Old clips may request bold/italic on a regular-only display face.
+        # Persist the nearest real face so browser and exported text agree.
+        variant = caption_variant(self.font, self.weight, self.italic)
+        self.weight = variant["weight"]
+        self.italic = variant["italic"]
+        return self
+
+    @model_validator(mode="before")
+    @classmethod
+    def normalize_legacy_config(cls, value: object) -> object:
+        if isinstance(value, dict):
+            normalized = dict(value)
+            # Retired external renderer presets remain readable. Never discard
+            # a user's typography, placement, colors or transcript on save.
+            if normalized.get("animation") in {
+                "mogrt-pack1-01",
+                "mogrt-pack1-02",
+                "mogrt-pack1-03",
+                "mogrt-pack1-04",
+                "blue-slice",
+                "smoke-block",
+                "vertical-snap",
+                "blue-echo",
+            }:
+                normalized["animation"] = "word-pop"
+            return normalized
+        return value
 
 
 class OverlayConfig(BaseModel):
@@ -95,9 +199,27 @@ class OverlayConfig(BaseModel):
         return self
 
 
+class PanelConfig(BaseModel):
+    model_config = ConfigDict(allow_inf_nan=False)
+    subject: Literal[
+        "primary", "left", "center", "right", "person-1", "person-2", "person-3", "person-4"
+    ] = "primary"
+    anchor_x: float | None = Field(default=None, ge=0, le=1)
+    anchor_y: float | None = Field(default=None, ge=0, le=1)
+    zoom: float = Field(default=1, ge=1, le=3)
+
+    @model_validator(mode="after")
+    def paired_anchor(self) -> "PanelConfig":
+        if (self.anchor_x is None) != (self.anchor_y is None):
+            raise ValueError("Provide both panel crop anchor coordinates.")
+        return self
+
+
 class RenderConfig(BaseModel):
     model_config = ConfigDict(allow_inf_nan=False)
     quality: Literal["Draft", "Standard", "High"] = "Standard"
+    layout: Literal["single", "auto", "stacked", "side-by-side", "grid"] = "single"
+    panels: list[PanelConfig] = Field(default_factory=list, max_length=4)
     crop_mode: Literal["STATIC_SUBJECT_LOCK", "SCENE_AWARE_LOCK"] = "STATIC_SUBJECT_LOCK"
     anchor_x: float | None = Field(default=None, ge=0, le=1)
     anchor_y: float | None = Field(default=None, ge=0, le=1)
@@ -116,6 +238,18 @@ class RenderConfig(BaseModel):
     def paired_anchor(self) -> "RenderConfig":
         if (self.anchor_x is None) != (self.anchor_y is None):
             raise ValueError("Provide both crop anchor coordinates.")
+        if self.layout == "auto":
+            self.panels = []
+        elif self.layout != "single":
+            if not self.panels:
+                count = 4 if self.layout == "grid" else 2
+                self.panels = [
+                    PanelConfig.model_validate({"subject": f"person-{index + 1}"})
+                    for index in range(count)
+                ]
+            allowed_counts = {3, 4} if self.layout == "grid" else {2}
+            if len(self.panels) not in allowed_counts:
+                raise ValueError("Choose two panels for a split or three to four for a grid.")
         return self
 
 

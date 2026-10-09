@@ -16,11 +16,15 @@ dependencies = [
 
 [project.optional-dependencies]
 dev = ["pytest>=8,<10", "ruff>=0.12", "mypy>=1.17", "types-redis", "boto3-stubs[s3]", "types-requests"]
+vision = ["opencv-python-headless>=4.12,<5"]
 media = ["faster-whisper>=1.2.1,<2", "av>=16,<19", "scenedetect>=0.7.1,<0.8", "mediapipe>=0.10,<0.11", "opencv-python-headless>=4.12,<5"]
 
 [tool.setuptools.packages.find]
 where = ["apps/api", "workers/media"]
 include = ["clipforge_api*", "clipforge_worker*"]
+
+[tool.setuptools.package-data]
+clipforge_api = ["caption-fonts.json"]
 
 [tool.pytest.ini_options]
 testpaths = ["apps/api/tests", "workers/media/tests"]

@@ -4,9 +4,9 @@ export default function NewProject() {
     <>
       <div className="page-head">
         <div>
-          <p className="eyebrow">From long-form to share-worthy</p>
+          <p className="eyebrow">Create clips from a video</p>
           <h1>New project</h1>
-          <p>Set the direction. We’ll keep everything together.</p>
+          <p>Upload a video and choose your clip options. We’ll guide you through analysis, highlights, and downloads.</p>
         </div>
       </div>
       <ProjectForm />

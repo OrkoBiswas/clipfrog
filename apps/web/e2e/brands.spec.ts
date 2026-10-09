@@ -4,6 +4,7 @@ import path from "node:path";
 test("save a brand kit, upload a logo, apply to a project and retain its saved copy", async ({
   page,
 }) => {
+  test.setTimeout(120_000);
   await page.goto("/register");
   await page.getByLabel("Your name").fill("Brand Creator");
   await page
@@ -20,9 +21,10 @@ test("save a brand kit, upload a logo, apply to a project and retain its saved c
     .setInputFiles(path.resolve("../../.local/brand-logo.png"));
   await page.getByRole("button", { name: /2 Caption/ }).click();
   await page
-    .getByRole("combobox", { name: "Caption style", exact: true })
-    .selectOption("Bold");
-  await page.getByLabel("Primary color").fill("#33aaff");
+    .getByRole("combobox", { name: "Caption template", exact: true })
+    .selectOption("kinetic-bold");
+  await page.locator("summary").filter({ hasText: "Color & emphasis" }).click();
+  await page.getByLabel("Text color", { exact: true }).fill("#33aaff");
 
   await page.getByRole("button", { name: "Save brand kit" }).click();
   await expect(
@@ -33,7 +35,8 @@ test("save a brand kit, upload a logo, apply to a project and retain its saved c
   await page.reload();
   await page.getByRole("button", { name: "Edit Studio identity" }).click();
   await page.getByRole("button", { name: /2 Caption/ }).click();
-  await expect(page.getByLabel("Primary color")).toHaveValue("#33aaff");
+  await page.locator("summary").filter({ hasText: "Color & emphasis" }).click();
+  await expect(page.getByLabel("Text color", { exact: true })).toHaveValue("#33aaff");
   await expect(
     page.getByRole("button", { name: "Preview logo" }),
   ).toBeVisible();

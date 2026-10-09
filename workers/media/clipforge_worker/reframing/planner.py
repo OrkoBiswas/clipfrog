@@ -1,11 +1,15 @@
 import math
 from dataclasses import dataclass, field
+from functools import partial
 from statistics import median
-from typing import Literal
+from typing import TYPE_CHECKING, Literal
 
 from pydantic import BaseModel, Field
 
-from clipforge_worker.vision.face_detector import Face, FaceFrame
+from clipforge_worker.vision.face_detector import COLLAGE_DETECTOR_VERSION, Face, FaceFrame
+
+if TYPE_CHECKING:
+    from clipforge_api.clip_schemas import RenderConfig
 
 RATIOS = {
     "9:16": (1080, 1920),
@@ -25,7 +29,7 @@ class CropKeyframe(BaseModel):
     cut: bool = False
 
 
-class CropPlan(BaseModel):
+class CropRegion(BaseModel):
     mode: str
     source_width: int
     source_height: int
@@ -40,12 +44,33 @@ class CropPlan(BaseModel):
     subjects: list[dict] = Field(default_factory=list)
 
 
+class PanelPlan(CropRegion):
+    x: int
+    y: int
+    width: int
+    height: int
+    subject: str
+
+
+class CropPlan(CropRegion):
+    layout: Literal["single", "auto", "stacked", "side-by-side", "grid"] = "single"
+    panels: list[PanelPlan] = Field(default_factory=list)
+    scenes: list["CompositionScene"] = Field(default_factory=list)
+
+
+class CompositionScene(CropRegion):
+    start: float
+    end: float
+    layout: Literal["single", "stacked", "side-by-side", "grid"]
+    panels: list[PanelPlan] = Field(default_factory=list)
+
+
 @dataclass
 class Track:
     samples: list[tuple[float, Face]] = field(default_factory=list)
 
 
-def primary_track(frames: list[FaceFrame]) -> Track | None:
+def face_tracks(frames: list[FaceFrame]) -> list[Track]:
     """Greedy spatial association; persistence outweighs an occasional large face."""
     tracks: list[Track] = []
     for frame in frames:
@@ -71,6 +96,29 @@ def primary_track(frames: list[FaceFrame]) -> Track | None:
             else:
                 tracks.append(Track([(frame.timestamp, face)]))
 
+    return tracks
+
+
+def primary_track(frames: list[FaceFrame], subject: str = "primary") -> Track | None:
+    tracks = face_tracks(frames)
+    if not tracks:
+        return None
+    if subject in {"left", "center", "right"} or subject.startswith("person-"):
+        # Select a persistent track once per shot, rather than re-numbering faces
+        # on each frame when a detector briefly loses one of the speakers.
+        threshold = max(len(track.samples) for track in tracks) * 0.35
+        ordered = sorted(
+            (track for track in tracks if len(track.samples) >= threshold),
+            key=lambda track: median(face.center_x for _, face in track.samples),
+        )
+        if subject == "center":
+            return min(
+                ordered,
+                key=lambda track: abs(median(face.center_x for _, face in track.samples) - 0.5),
+            )
+        index = 0 if subject == "left" else -1 if subject == "right" else int(subject[-1]) - 1
+        return ordered[index] if -len(ordered) <= index < len(ordered) else None
+
     def score(track: Track) -> float:
         faces = [f for _, f in track.samples]
         persistence = len(faces) / max(1, len(frames))
@@ -78,13 +126,23 @@ def primary_track(frames: list[FaceFrame]) -> Track | None:
         centrality = 1 - abs(median(f.center_x for f in faces) - 0.5)
         return persistence * 0.7 + min(1, size * 5) * 0.2 + centrality * 0.1
 
-    return max(tracks, key=score) if tracks else None
+    return max(tracks, key=score)
 
 
-def geometry(width: int, height: int, ratio: str, zoom: float = 1) -> tuple[int, int, int, int]:
+def geometry(
+    width: int,
+    height: int,
+    ratio: str,
+    zoom: float = 1,
+    output_size: tuple[int, int] | None = None,
+) -> tuple[int, int, int, int]:
     if width < 2 or height < 2 or not 1 <= zoom <= 3:
         raise ValueError("Invalid source dimensions or crop zoom.")
-    if ratio == "Original":
+    if output_size is not None:
+        ow, oh = output_size
+        if min(ow, oh) < 2 or ow % 2 or oh % 2:
+            raise ValueError("Output dimensions must be positive, even pixels.")
+    elif ratio == "Original":
         ow, oh = width // 2 * 2, height // 2 * 2
     elif ratio in RATIOS:
         ow, oh = RATIOS[ratio]
@@ -118,10 +176,12 @@ def plan_crop(
     horizontal_dead_zone: float = 0.18,
     vertical_dead_zone: float = 0.15,
     sentence_boundaries: list[float] | None = None,
+    output_size: tuple[int, int] | None = None,
+    fallback_anchor: tuple[float, float] = (0.5, 0.5),
 ) -> CropPlan:
     if end <= start:
         raise ValueError("Clip end must follow its start.")
-    cw, ch, ow, oh = geometry(width, height, ratio, zoom)
+    cw, ch, ow, oh = geometry(width, height, ratio, zoom, output_size)
 
     def position(cx: float, cy: float) -> tuple[int, int]:
         return (
@@ -148,25 +208,11 @@ def plan_crop(
     keyframes: list[CropKeyframe] = []
     confidence: list[float] = []
     warnings: list[str] = []
-    last_anchor = (0.5, 0.5)
+    last_anchor = fallback_anchor
     subjects: list[dict] = []
     for left, right in zip(boundaries, boundaries[1:], strict=False):
         samples = [f for f in frames if left <= f.timestamp < right]
-        if subject in {"left", "right"}:
-            samples = [
-                FaceFrame(
-                    timestamp=f.timestamp,
-                    faces=[
-                        sorted(f.faces, key=lambda item: item.center_x)[
-                            0 if subject == "left" else -1
-                        ]
-                    ]
-                    if f.faces
-                    else [],
-                )
-                for f in samples
-            ]
-        track = primary_track(samples)
+        track = primary_track(samples, subject)
         if track:
             # Median rejects occasional detection offsets; head sits near the upper third.
             faces = [f for _, f in track.samples]
@@ -221,7 +267,7 @@ def plan_crop(
         else:
             # Brief misses keep framing; longer absence falls back to source center.
             if right - left > 5 or not keyframes:
-                last_anchor = (0.5, 0.5)
+                last_anchor = fallback_anchor
             confidence.append(0)
             warnings.append("No persistent face in a shot; retained anchor or center framing used.")
         x, y = position(*last_anchor)
@@ -290,7 +336,442 @@ def plan_crop(
     return plan
 
 
-def framing_quality(plan: CropPlan, eye_line: float = 0.34, headroom: float = 0.08) -> dict:
+def panel_bounds(
+    layout: str, count: int, width: int, height: int
+) -> list[tuple[int, int, int, int]]:
+    """Even boundaries tile the entire output, including odd half-size ratios."""
+    half_width, half_height = width // 4 * 2, height // 4 * 2
+    if layout == "stacked" and count == 2:
+        return [(0, 0, width, half_height), (0, half_height, width, height - half_height)]
+    if layout == "side-by-side" and count == 2:
+        return [(0, 0, half_width, height), (half_width, 0, width - half_width, height)]
+    if layout == "grid" and count in {3, 4}:
+        top = (
+            [(0, 0, width, half_height)]
+            if count == 3
+            else [(0, 0, half_width, half_height), (half_width, 0, width - half_width, half_height)]
+        )
+        return [
+            *top,
+            (0, half_height, half_width, height - half_height),
+            (half_width, half_height, width - half_width, height - half_height),
+        ]
+    raise ValueError("Split screen requires two panels, or three to four panels in a grid.")
+
+
+def plan_composition(
+    width: int,
+    height: int,
+    ratio: str,
+    start: float,
+    end: float,
+    frames: list[FaceFrame],
+    scene_cuts: list[float] | None = None,
+    *,
+    config: "RenderConfig",
+    sentence_boundaries: list[float] | None = None,
+) -> CropPlan:
+    """Use exactly the same source crops for the editor and the exported video."""
+    if config.layout == "auto":
+        plan = plan_automatic_collage(
+            width,
+            height,
+            ratio,
+            start,
+            end,
+            frames,
+            scene_cuts or [],
+            config=config,
+            sentence_boundaries=sentence_boundaries,
+        )
+        plan.quality["collage_detector"] = COLLAGE_DETECTOR_VERSION
+        return plan
+    plan_region = partial(
+        plan_crop,
+        mode=config.crop_mode,
+        eye_line=config.eye_line,
+        headroom=config.headroom,
+        lock_camera=config.lock_camera,
+        minimum_hold=config.minimum_crop_hold_seconds,
+        horizontal_dead_zone=config.horizontal_dead_zone,
+        vertical_dead_zone=config.vertical_dead_zone,
+        sentence_boundaries=sentence_boundaries,
+    )
+    if config.layout == "single":
+        return plan_region(
+            width,
+            height,
+            ratio,
+            start,
+            end,
+            frames,
+            scene_cuts,
+            manual_anchor=(config.anchor_x, config.anchor_y)
+            if config.anchor_x is not None and config.anchor_y is not None
+            else None,
+            zoom=config.zoom,
+            subject=config.subject,
+        )
+    _, _, output_width, output_height = geometry(width, height, ratio)
+    bounds = panel_bounds(config.layout, len(config.panels), output_width, output_height)
+    panels = []
+    for index, (panel_config, (x, y, panel_width, panel_height)) in enumerate(
+        zip(config.panels, bounds, strict=True)
+    ):
+        fallback_x = (index + 0.5) / len(config.panels)
+        if panel_config.subject == "left":
+            fallback_x = 0.25
+        elif panel_config.subject == "right":
+            fallback_x = 0.75
+        elif panel_config.subject == "center":
+            fallback_x = 0.5
+        elif panel_config.subject.startswith("person-"):
+            fallback_x = min(1, (int(panel_config.subject[-1]) - 0.5) / len(config.panels))
+        region = plan_region(
+            width,
+            height,
+            ratio,
+            start,
+            end,
+            frames,
+            scene_cuts,
+            manual_anchor=(panel_config.anchor_x, panel_config.anchor_y)
+            if panel_config.anchor_x is not None and panel_config.anchor_y is not None
+            else None,
+            zoom=panel_config.zoom,
+            subject=panel_config.subject,
+            output_size=(panel_width, panel_height),
+            fallback_anchor=(fallback_x, 0.5),
+        )
+        if region.warnings:
+            region.warnings = [
+                "Speaker was not detected in part of this clip. Check this panel or set its crop manually."
+            ]
+        panels.append(
+            PanelPlan(
+                **region.model_dump(exclude={"layout", "panels", "scenes"}),
+                x=x,
+                y=y,
+                width=panel_width,
+                height=panel_height,
+                subject=panel_config.subject,
+            )
+        )
+    assessed = [panel.quality for panel in panels if panel.quality.get("validated")]
+    quality = {
+        "score": min(item["score"] for item in assessed) if assessed else None,
+        "validated": bool(assessed),
+        "all_panels_validated": all(
+            panel.quality.get("validated") or panel.mode == "MANUAL" for panel in panels
+        ),
+        "clipped_fraction": max((item.get("clipped_fraction", 0) for item in assessed), default=0),
+        "panels": [
+            {
+                "index": index,
+                **{key: value for key, value in panel.quality.items() if key != "samples"},
+            }
+            for index, panel in enumerate(panels)
+        ],
+        "samples": [
+            {**sample, "panel_index": index}
+            for index, panel in enumerate(panels)
+            for sample in panel.quality.get("samples", [])
+        ],
+    }
+    return CropPlan(
+        **panels[0].model_dump(
+            exclude={
+                "x",
+                "y",
+                "width",
+                "height",
+                "subject",
+                "mode",
+                "output_width",
+                "output_height",
+                "confidence",
+                "warnings",
+                "quality",
+                "subjects",
+                "scenes",
+            }
+        ),
+        mode="SPLIT_SCREEN",
+        layout=config.layout,
+        output_width=output_width,
+        output_height=output_height,
+        confidence=sum(panel.confidence for panel in panels) / len(panels),
+        warnings=[
+            f"Panel {index + 1}: {warning}"
+            for index, panel in enumerate(panels)
+            for warning in panel.warnings
+        ],
+        quality=quality,
+        subjects=[
+            {**subject, "panel_index": index}
+            for index, panel in enumerate(panels)
+            for subject in panel.subjects
+        ],
+        panels=panels,
+    )
+
+
+def detected_people(frames: list[FaceFrame]) -> int:
+    """Require repeated simultaneous detections, not alternating close-ups."""
+    if not frames:
+        return 1
+    counts = [
+        min(
+            4,
+            len(
+                [
+                    face
+                    for face in frame.faces
+                    if face.confidence >= 0.65 and face.w > 0 and face.h > 0
+                ]
+            ),
+        )
+        for frame in frames
+    ]
+    required = min(len(frames), max(2, math.ceil(len(frames) * 0.3)))
+    return next((count for count in (4, 3, 2) if sum(n >= count for n in counts) >= required), 1)
+
+
+def collage_boundaries(
+    start: float, end: float, frames: list[FaceFrame], cuts: list[float]
+) -> list[float]:
+    native = sorted({start, end, *(cut for cut in cuts if start < cut < end)})
+    changes = list(native)
+    for left, right in zip(native, native[1:], strict=False):
+        samples = sorted(
+            (frame for frame in frames if left <= frame.timestamp < right),
+            key=lambda frame: frame.timestamp,
+        )
+        if len(samples) < 4:
+            continue
+        counts = [
+            min(
+                4,
+                sum(face.confidence >= 0.65 and face.w > 0 and face.h > 0 for face in frame.faces),
+            )
+            for frame in samples
+        ]
+        # Median sampling holds a layout through brief detection losses.
+        smoothed = [
+            int(
+                median(
+                    [
+                        count
+                        for other, count in zip(samples, counts, strict=True)
+                        if abs(other.timestamp - frame.timestamp) <= 0.75
+                    ]
+                )
+            )
+            for frame in samples
+        ]
+        current, pending, since = smoothed[0], smoothed[0], samples[0].timestamp
+        for frame, count in zip(samples[1:], smoothed[1:], strict=True):
+            if count != pending:
+                pending, since = count, frame.timestamp
+            if count != current and frame.timestamp - since >= 1:
+                changes.append(since)
+                current = count
+    # Use the output frame clock so concatenated shots cannot accumulate drift.
+    return sorted(
+        {
+            start,
+            end,
+            *(
+                min(end, max(start, start + round((cut - start) * 30) / 30))
+                for cut in changes
+                if start < cut < end
+            ),
+        }
+    )
+
+
+def plan_automatic_collage(
+    width: int,
+    height: int,
+    ratio: str,
+    start: float,
+    end: float,
+    frames: list[FaceFrame],
+    scene_cuts: list[float],
+    *,
+    config: "RenderConfig",
+    sentence_boundaries: list[float] | None = None,
+) -> CropPlan:
+    from clipforge_api.clip_schemas import PanelConfig
+
+    boundaries = collage_boundaries(start, end, frames, scene_cuts)
+    _, _, ow, oh = geometry(width, height, ratio)
+
+    panel_configs: dict[int, list[PanelConfig]] = {}
+
+    def panels_for(count: int, layout: str) -> list[PanelConfig]:
+        if count not in panel_configs:
+            panels = []
+            for index, (_, _, pw, ph) in enumerate(panel_bounds(layout, count, ow, oh)):
+                cw, _, _, _ = geometry(width, height, ratio, output_size=(pw, ph))
+                targets = []
+                for frame in frames:
+                    if not start <= frame.timestamp < end:
+                        continue
+                    faces = sorted(
+                        (face for face in frame.faces if face.confidence >= 0.65),
+                        key=lambda face: face.center_x,
+                    )
+                    if len(faces) < count:
+                        continue
+                    face = faces[index]
+                    spacing = min(
+                        abs(face.center_x - other.center_x) for other in faces if other is not face
+                    )
+                    targets.append(
+                        max(
+                            face.w * width * 1.55,
+                            face.h * height * 1.4 * pw / ph,
+                            spacing * width * 0.8,
+                        )
+                    )
+                # A common crop size per layout keeps all camera cuts on one
+                # render clock, while framing each person rather than the group.
+                target = sorted(targets)[int((len(targets) - 1) * 0.95)] if targets else cw
+                panels.append(
+                    PanelConfig.model_validate(
+                        {
+                            "subject": f"person-{index + 1}",
+                            "zoom": round(max(1, min(3, cw / max(2, target))), 3),
+                        }
+                    )
+                )
+            panel_configs[count] = panels
+        return panel_configs[count]
+
+    shots: list[CropPlan] = []
+    shot_configs: list[RenderConfig] = []
+    scenes: list[CompositionScene] = []
+    for left, right in zip(boundaries, boundaries[1:], strict=False):
+        samples = [frame for frame in frames if left <= frame.timestamp < right]
+        count = detected_people(samples)
+        layout = (
+            "single"
+            if count == 1
+            else (("stacked" if oh >= ow else "side-by-side") if count == 2 else "grid")
+        )
+        automatic = config.model_copy(
+            update={
+                "layout": layout,
+                "panels": panels_for(count, layout) if count > 1 else [],
+                "anchor_x": None,
+                "anchor_y": None,
+                "zoom": 1,
+                "subject": "primary",
+            }
+        )
+        shot = plan_composition(
+            width,
+            height,
+            ratio,
+            left,
+            right,
+            samples,
+            [],
+            config=automatic,
+            sentence_boundaries=sentence_boundaries,
+        )
+        # Edge positioning lowers the aesthetic score even when the head is
+        # fully visible. It must not suppress a real second person.
+        if count > 1 and shot.quality.get("clipped_fraction", 0) > 0.2:
+            automatic = automatic.model_copy(
+                update={
+                    "panels": [panel.model_copy(update={"zoom": 1}) for panel in automatic.panels]
+                }
+            )
+            shot = plan_composition(
+                width,
+                height,
+                ratio,
+                left,
+                right,
+                samples,
+                [],
+                config=automatic,
+            )
+        if count > 1 and not shot.quality.get("all_panels_validated"):
+            automatic = automatic.model_copy(update={"layout": "single", "panels": []})
+            shot = plan_composition(
+                width,
+                height,
+                ratio,
+                left,
+                right,
+                samples,
+                [],
+                config=automatic,
+            )
+        shots.append(shot)
+        shot_configs.append(automatic)
+        scenes.append(
+            CompositionScene(
+                **shot.model_dump(exclude={"scenes"}),
+                start=left - start,
+                end=right - start,
+            )
+        )
+    if len(shots) == 1:
+        return shots[0]
+    if (
+        len(
+            {
+                (shot.layout, tuple((panel.crop_width, panel.crop_height) for panel in shot.panels))
+                for shot in shots
+            }
+        )
+        == 1
+    ):
+        fixed = config.model_copy(
+            update={
+                "layout": shots[0].layout,
+                "panels": shot_configs[0].panels,
+                "anchor_x": None,
+                "anchor_y": None,
+                "zoom": 1,
+                "subject": "primary",
+            }
+        )
+        return plan_composition(
+            width,
+            height,
+            ratio,
+            start,
+            end,
+            frames,
+            boundaries[1:-1],
+            config=fixed,
+            sentence_boundaries=sentence_boundaries,
+        )
+    assessed = [shot.quality for shot in shots if shot.quality.get("validated")]
+    return shots[0].model_copy(
+        update={
+            "mode": "AUTO_COLLAGE",
+            "layout": "auto",
+            "panels": [],
+            "scenes": scenes,
+            "warnings": list(dict.fromkeys(warning for shot in shots for warning in shot.warnings)),
+            "quality": {
+                "score": min((item["score"] for item in assessed), default=None),
+                "validated": bool(assessed),
+                "clipped_fraction": max(
+                    (item.get("clipped_fraction", 0) for item in assessed), default=0
+                ),
+            },
+        }
+    )
+
+
+def framing_quality(plan: CropRegion, eye_line: float = 0.34, headroom: float = 0.08) -> dict:
     """Evaluate sampled detected subjects in the actual crop coordinate system."""
     if not plan.subjects:
         return {
@@ -305,7 +786,11 @@ def framing_quality(plan: CropPlan, eye_line: float = 0.34, headroom: float = 0.
         x = (face["center_x"] * plan.source_width - key.x) / plan.crop_width
         y = (face["center_y"] * plan.source_height - key.y) / plan.crop_height
         eye = (
-            (float(face["eye_y"]) if face.get("eye_y") is not None else face["y"] + face["h"] * 0.35)
+            (
+                float(face["eye_y"])
+                if face.get("eye_y") is not None
+                else face["y"] + face["h"] * 0.35
+            )
             * plan.source_height
             - key.y
         ) / plan.crop_height
@@ -348,4 +833,3 @@ def framing_quality(plan: CropPlan, eye_line: float = 0.34, headroom: float = 0.
         "samples": metrics,
         "clipped_fraction": sum(m["face_visibility"] < 0.98 for m in metrics) / len(metrics),
     }
-

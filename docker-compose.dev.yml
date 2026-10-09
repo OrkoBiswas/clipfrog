@@ -11,6 +11,7 @@ services:
   worker:
     environment:
       PYTHONPATH: /app/apps/api:/app/workers/media
+      CLIPFORGE_MOGRT_AGENT_URL: http://host.docker.internal:8765
     volumes:
       - ./apps/api:/app/apps/api
       - ./workers/media:/app/workers/media
