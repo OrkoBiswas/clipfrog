@@ -8,7 +8,7 @@ from clipforge_worker.media.probe import probe
 from clipforge_worker.reframing.planner import RATIOS, plan_composition, plan_crop
 from clipforge_worker.rendering.renderer import render
 from clipforge_worker.transcription.base import Segment
-from clipforge_worker.vision.face_detector import Face, FaceFrame
+from clipforge_worker.vision.face_detector import COLLAGE_DETECTOR_VERSION, Face, FaceFrame
 from PIL import Image
 
 
@@ -162,7 +162,56 @@ def test_auto_collage_keeps_a_lower_confidence_person_at_the_source_edge():
     assert plan.panels[0].quality["score"] < 90, "An off-center visible face must still get a panel"
     assert plan.panels[0].crop_width < 1000, "Panels should focus on individual people"
     assert plan.panels[0].keyframes[0].x < plan.panels[1].keyframes[0].x
-    assert plan.quality["collage_detector"] == "yunet-collage-v1"
+    assert plan.quality["collage_detector"] == COLLAGE_DETECTOR_VERSION
+
+
+@pytest.mark.parametrize("duplicates", [2, 4])
+def test_auto_collage_does_not_make_panels_from_duplicate_head_detections(duplicates):
+    face = speakers(1)[0]
+    faces = [
+        face.model_copy(
+            update={"x": face.x + index * 0.005, "center_x": face.center_x + index * 0.005}
+        )
+        for index in range(duplicates)
+    ]
+    frames = [FaceFrame(timestamp=i / 3, faces=faces) for i in range(30)]
+    plan = plan_composition(1920, 1080, "9:16", 0, 10, frames, config=RenderConfig(layout="auto"))
+    assert plan.layout == "single" and not plan.panels
+
+
+def test_auto_collage_does_not_assign_two_fragments_of_one_person_to_panels():
+    left, right = speakers(2)
+    moved = left.model_copy(update={"x": left.x + 0.19, "center_x": left.center_x + 0.19})
+    frames = [
+        FaceFrame(timestamp=i / 3, faces=[left if i < 15 else moved, right]) for i in range(30)
+    ]
+    plan = plan_composition(1920, 1080, "9:16", 0, 10, frames, config=RenderConfig(layout="auto"))
+    assert len(plan.panels) == 2
+    assert {sample["center_x"] for sample in plan.panels[1].subjects} == {right.center_x}
+
+
+def test_auto_collage_uses_alternative_layout_when_wide_crops_repeat_heads():
+    faces = [
+        Face(confidence=0.95, x=x - 0.05, y=0.2, w=0.1, h=0.35, center_x=x, center_y=0.375)
+        for x in (0.4, 0.6)
+    ]
+    frames = [FaceFrame(timestamp=i / 3, faces=faces) for i in range(12)]
+    plan = plan_composition(1080, 1920, "9:16", 0, 4, frames, config=RenderConfig(layout="auto"))
+    assert plan.layout == "side-by-side" and len(plan.panels) == 2
+    for index, panel in enumerate(plan.panels):
+        key = panel.keyframes[0]
+        assert key.x <= faces[index].center_x * 1080 < key.x + panel.crop_width
+        assert not key.x <= faces[1 - index].center_x * 1080 < key.x + panel.crop_width
+
+
+def test_auto_collage_falls_back_when_people_cannot_have_separate_crops():
+    faces = [
+        Face(confidence=0.95, x=x - 0.12, y=0.2, w=0.24, h=0.4, center_x=x, center_y=0.4)
+        for x in (0.43, 0.57)
+    ]
+    frames = [FaceFrame(timestamp=i / 3, faces=faces) for i in range(12)]
+    plan = plan_composition(1920, 1080, "9:16", 0, 4, frames, config=RenderConfig(layout="auto"))
+    assert plan.layout == "single" and not plan.panels
 
 
 def test_auto_collage_changes_at_shots_and_keeps_a_single_person_fullscreen():
@@ -183,6 +232,67 @@ def test_auto_collage_changes_when_a_second_person_enters_without_a_camera_cut()
     plan = plan_composition(1920, 1080, "9:16", 0, 10, frames, config=RenderConfig(layout="auto"))
     assert [scene.layout for scene in plan.scenes] == ["single", "stacked"]
     assert plan.scenes[0].end == plan.scenes[1].start
+
+
+@pytest.mark.skipif(not shutil.which("ffmpeg"), reason="FFmpeg required")
+def test_real_auto_collage_renders_distinct_people_when_stacked_crops_would_repeat(tmp_path):
+    source = tmp_path / "portrait.mp4"
+    subprocess.run(
+        [
+            "ffmpeg",
+            "-v",
+            "error",
+            "-f",
+            "lavfi",
+            "-i",
+            "color=red:s=360x640:d=1,drawbox=x=180:y=0:w=180:h=640:color=blue:t=fill",
+            "-f",
+            "lavfi",
+            "-i",
+            "sine=frequency=440:duration=1",
+            "-c:v",
+            "libx264",
+            "-pix_fmt",
+            "yuv420p",
+            "-c:a",
+            "aac",
+            "-shortest",
+            str(source),
+        ],
+        check=True,
+    )
+    faces = [
+        Face(confidence=0.95, x=x - 0.05, y=0.2, w=0.1, h=0.35, center_x=x, center_y=0.375)
+        for x in (0.4, 0.6)
+    ]
+    frames = [FaceFrame(timestamp=i / 3, faces=faces) for i in range(3)]
+    config = RenderConfig(layout="auto", quality="Draft", normalize_audio=False)
+    plan = plan_composition(360, 640, "9:16", 0, 1, frames, config=config)
+    assert plan.layout == "side-by-side"
+    output = tmp_path / "output.mp4"
+    render(
+        source,
+        output,
+        tmp_path / "thumbnail.jpg",
+        plan,
+        0,
+        1,
+        [],
+        CaptionConfig(enabled=False),
+        OverlayConfig(),
+        config,
+    )
+    info = probe(output)
+    assert info.has_audio and abs(info.duration_ms - 1000) < 70
+    frame = tmp_path / "frame.png"
+    subprocess.run(
+        ["ffmpeg", "-v", "error", "-ss", "0.5", "-i", str(output), "-frames:v", "1", str(frame)],
+        check=True,
+    )
+    with Image.open(frame) as picture:
+        for x, expected in [(0.25, (255, 0, 0)), (0.75, (0, 0, 255))]:
+            actual = picture.getpixel((round(picture.width * x), picture.height // 2))[:3]
+            assert all(abs(a - b) < 25 for a, b in zip(actual, expected, strict=True))
 
 
 @pytest.mark.skipif(not shutil.which("ffmpeg"), reason="FFmpeg required")

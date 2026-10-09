@@ -15,12 +15,20 @@ results. Profile and edge-positioned faces can receive separate panels without
 being rejected for a low aesthetic score. Older automatic renders regenerate
 when their detector version is outdated. Single-person shots stay full screen.
 
+The v2 collage checks suppress overlapping detections of one head and bind
+panels to persistent tracks observed together. Each shot keeps its checked crops
+instead of selecting people again when combining shots. A sampled head cannot
+appear in multiple automatic panels, including after widening a crop. Two-person
+shots try the alternate collage arrangement if needed, then fall back to single
+screen when distinct, visible crops cannot be established. The version change
+invalidates older detections and automatic render plans on the next render.
+
 Caption groups and their backgrounds clear during speech pauses in the editor,
 rendered video and clip SRT downloads. Automatic highlights favor completed
 statements and natural pauses, with a short tail after the final word. Local
 editorial scoring and preference learning replace the optional cloud review.
 
-Latest verification: 469 Python tests and 31 frontend unit tests passed. Python
+Latest verification: 475 Python tests and 31 frontend unit tests passed. Python
 lint/type checks and frontend lint/type/build checks passed. Browser acceptance
 passed all 12 scenarios, covering the real speech-to-highlight/render pipeline and automatic collage,
 caption pause timing, font persistence, and regeneration of older renders. An
@@ -29,6 +37,10 @@ preview, cached analysis and Celery rendering. Its output retained audio and
 duration. Real-footage verification covers these samples, not every pose or source.
 Brand kits with expanded caption template names remain readable after applying
 them to a project; API validation matches the caption configuration schema.
+The duplicate-person fix passed the automatic collage browser render test,
+duplicate-detection and fragmented-track regressions, and a real FFmpeg check
+that would repeat both heads with the original stacked crop. The existing
+two-person source sample still renders distinct panels with audio and duration.
 
 API, worker and web services run in Docker at localhost:3000/8000. The records
 below describe earlier milestones; this section supersedes their caption-library,

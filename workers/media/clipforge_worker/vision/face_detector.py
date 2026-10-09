@@ -7,7 +7,7 @@ from pydantic import BaseModel
 
 from clipforge_worker.config import worker_settings
 
-COLLAGE_DETECTOR_VERSION = "yunet-collage-v1"
+COLLAGE_DETECTOR_VERSION = "yunet-collage-v2"
 COLLAGE_FPS = 3
 
 
@@ -26,6 +26,27 @@ class FaceFrame(BaseModel):
     timestamp: float
     faces: list[Face]
     detector: str | None = None
+
+
+def distinct_faces(faces: list[Face]) -> list[Face]:
+    """Suppress overlapping detections of one head before counting or tracking."""
+    kept: list[Face] = []
+    for face in sorted(faces, key=lambda item: -item.confidence):
+        if face.confidence < 0.65 or face.w <= 0 or face.h <= 0:
+            continue
+        for other in kept:
+            intersection = max(
+                0, min(face.x + face.w, other.x + other.w) - max(face.x, other.x)
+            ) * max(0, min(face.y + face.h, other.y + other.h) - max(face.y, other.y))
+            area, other_area = face.w * face.h, other.w * other.h
+            if (
+                intersection / min(area, other_area) >= 0.65
+                or intersection / (area + other_area - intersection) >= 0.4
+            ):
+                break
+        else:
+            kept.append(face)
+    return kept
 
 
 def collage_sample_times(start: float, end: float) -> list[float]:
@@ -133,7 +154,11 @@ class CollageFaceDetector:
                         )
                     )
                 results.append(
-                    FaceFrame(timestamp=timestamp, faces=faces, detector=COLLAGE_DETECTOR_VERSION)
+                    FaceFrame(
+                        timestamp=timestamp,
+                        faces=distinct_faces(faces),
+                        detector=COLLAGE_DETECTOR_VERSION,
+                    )
                 )
                 if index % 15 == 0:
                     progress((index + 1) / len(times))

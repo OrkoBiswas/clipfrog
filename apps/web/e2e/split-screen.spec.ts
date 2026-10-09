@@ -37,7 +37,7 @@ from clipforge_api.db import SessionLocal
 from clipforge_api.models import Analysis, Scene, Transcript
 with SessionLocal() as db:
     project_id = uuid.UUID('${projectId}')
-    db.add(Analysis(project_id=project_id, face_frames=[{'detector': 'yunet-collage-v1', 'timestamp': i / 3, 'faces': [{'confidence': 0.95, 'x': x - 0.04, 'y': 0.24, 'w': 0.08, 'h': 0.22, 'center_x': x, 'center_y': 0.35} for x in ([0.5] if i < 6 else [0.25, 0.5, 0.75])]} for i in range(12)]))
+    db.add(Analysis(project_id=project_id, face_frames=[{'detector': 'yunet-collage-v2', 'timestamp': i / 3, 'faces': [{'confidence': 0.95, 'x': x - 0.04, 'y': 0.24, 'w': 0.08, 'h': 0.22, 'center_x': x, 'center_y': 0.35} for x in ([0.5] if i < 6 else [0.25, 0.5, 0.75])]} for i in range(12)]))
     db.add(Scene(project_id=project_id, start_ms=0, end_ms=2000))
     db.add(Scene(project_id=project_id, start_ms=2000, end_ms=4000))
     db.add(Transcript(project_id=project_id, language='en', full_text='Medium black and wide captions', segments=[{'start': 0, 'end': 4, 'text': 'Medium black and wide captions', 'words': [{'start': 0.1, 'end': 0.4, 'text': 'Medium'}, {'start': 0.4, 'end': 0.8, 'text': 'black'}, {'start': 2, 'end': 2.4, 'text': 'and'}, {'start': 2.4, 'end': 2.8, 'text': 'wide'}, {'start': 2.8, 'end': 3.5, 'text': 'captions'}]}]))
@@ -173,7 +173,7 @@ with SessionLocal() as db:
 `], { cwd: path.resolve("../.."), timeout: 30_000 });
     await renderClip();
     const updated = (await (await page.request.get(`${base}/clips`)).json()).find((item: { id: string }) => item.id === clip.id);
-    expect(updated.crop_plan.quality.collage_detector).toBe("yunet-collage-v1");
+    expect(updated.crop_plan.quality.collage_detector).toBe("yunet-collage-v2");
     expect(updated.crop_plan.scenes.map((scene: { layout: string }) => scene.layout)).toEqual(["single", "grid"]);
   } finally {
     if (projectId) await page.request.delete(`${api}/projects/${projectId}`, { headers });

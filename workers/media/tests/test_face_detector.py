@@ -19,6 +19,9 @@ def test_refined_cache_requires_every_sample_in_the_requested_range():
         [frame.model_copy(update={"detector": None}) for frame in frames], 2.1, 5.2
     )
     assert not collage_analysis_ready(frames, 2, 6)
+    assert not collage_analysis_ready(
+        [frame.model_copy(update={"detector": "yunet-collage-v1"}) for frame in frames], 2.1, 5.2
+    )
 
 
 def test_refinement_merges_only_its_range_and_keeps_real_empty_samples():

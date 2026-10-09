@@ -25,7 +25,7 @@ def project_account(client, monkeypatch):
     monkeypatch.setattr(
         "clipforge_api.services.collage.CollageFaceDetector.analyze",
         lambda self, source, start, end, progress: [
-            FaceFrame(timestamp=t, faces=[], detector="yunet-collage-v1")
+            FaceFrame(timestamp=t, faces=[], detector="yunet-collage-v2")
             for t in collage_sample_times(start, end)
         ],
     )

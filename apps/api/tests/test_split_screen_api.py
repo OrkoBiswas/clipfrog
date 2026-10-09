@@ -75,7 +75,7 @@ def source_project(client, monkeypatch):
                 project_id=project.id,
                 face_frames=[
                     {
-                        "detector": "yunet-collage-v1",
+                        "detector": "yunet-collage-v2",
                         "timestamp": index / 3,
                         "faces": [
                             {
@@ -372,6 +372,6 @@ def test_automatic_preview_refines_legacy_faces_once_and_caches_the_original_foo
             select(Analysis).where(Analysis.project_id == uuid.UUID(source_project))
         )
         assert (
-            sum(frame.get("detector") == "yunet-collage-v1" for frame in analysis.face_frames) == 27
+            sum(frame.get("detector") == "yunet-collage-v2" for frame in analysis.face_frames) == 27
         )
         assert len(analysis.face_frames) == 30, "Keep detections outside the refined clip range"
